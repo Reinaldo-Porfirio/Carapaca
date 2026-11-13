@@ -405,20 +405,57 @@ static func tsk_andorinha() -> Geo.N:
 	Geo.decal(n, "n3", Vector3(0.66, Y + 0.05, -1.0), Vector3(0, PI / 2, 0), 0.45, 0.6)
 	return n
 
+## Garça: bípede esguio de pernas de ave, com propulsor de asas de penas (planador/atiradora aérea).
 static func tsk_garca() -> Geo.N:
 	var n := Geo.N.new("c")
+	# pernas de ave: coxa à frente, calcanhar alto para trás, dedos longos
 	for s in [1.0, -1.0]:
-		leg(n, Vector3(s * 0.7, 10.2, 0), Vector3(s * 0.95, 5.6, 1.4), Vector3(s * 0.95, 0.3, -0.1), 0.42, 0.34)
-		for t in [-0.35, 0.0, 0.35]: beam(n, "c", Vector3(s * 0.95, 0.25, -0.1), Vector3(s * 0.95 + t, 0.08, 1.1), 0.1, 0.08, 0.01)
-		beam(n, "c", Vector3(s * 0.95, 0.25, -0.1), Vector3(s * 0.95, 0.08, -0.9), 0.1, 0.08, 0.01)
-	n.put("a", Geo.prism([[-0.9, 10.0], [0.8, 10.0], [1.2, 10.9], [0.5, 11.6], [-1.0, 11.4]], 1.4, 0.08))
-	Geo.rod(n, "d", Vector3(0, 11.5, 0.3), Vector3(0, 12.4, 0.6), 0.12)
-	n.put("c", Geo.bx(0.4, 0.35, 0.6, 0.04), Vector3(0, 12.55, 0.7)); n.put("a", Geo.prism([[0.9, 12.5], [2.2, 12.45], [0.9, 12.7]], 0.22, 0.02))
-	n.put("g", Geo.cyl_z(0.07, 0.07, 0.04, 8), Vector3(0.14, 12.6, 1.01))
-	n.put("c", Geo.bx(0.5, 0.5, 2.4, 0.05), Vector3(-0.9, 11.7, -0.2)); n.put("d", Geo.cyl_z(0.12, 0.14, 7.8, 10), Vector3(-0.9, 11.75, 4.7))
-	n.put("b", Geo.bx(0.36, 0.36, 0.8, 0.04), Vector3(-0.9, 11.75, 8.6)); n.put("w", Geo.cyl_z(0.16, 0.16, 1.2, 10), Vector3(-0.9, 12.15, 0.6))
-	for s in [1.0, -1.0]: beam(n, "c", Vector3(s * 0.75, 11.0, 0.2), Vector3(s * 0.9, 10.0, 1.1), 0.22, 0.22); beam(n, "a", Vector3(s * 0.9, 10.0, 1.1), Vector3(-0.6, 11.4, 2.0), 0.2, 0.2)
-	n.put("b", Geo.bx(1.6, 0.08, 0.8, 0.02), Vector3(0, 11.5, -0.9), Vector3(0.3, 0, 0))
+		var hip := Vector3(s * 0.7, 5.8, -0.1); var knee := Vector3(s * 0.85, 4.1, 0.9); var heel := Vector3(s * 0.9, 2.0, -0.75); var foot := Vector3(s * 0.9, 0.3, 0.15)
+		joint(n, hip, 0.38); beam(n, "a", hip, knee, 0.55, 0.65, 0.06); joint(n, knee, 0.32)
+		beam(n, "c", knee, heel, 0.4, 0.45, 0.05); joint(n, heel, 0.26); beam(n, "c", heel, foot, 0.3, 0.32, 0.04)
+		n.put("b", Geo.bx(0.6, 0.6, 0.18, 0.03), hip.lerp(knee, 0.5) + Vector3(0, 0, 0.36), Vector3(-0.95, 0, 0))
+		for t in [-0.4, 0.0, 0.4]: beam(n, "c", foot, foot + Vector3(t, -0.2, 1.3), 0.12, 0.1, 0.01)
+		beam(n, "c", foot, foot + Vector3(0, -0.2, -0.8), 0.12, 0.1, 0.01)
+	n.put("c", Geo.bx(1.5, 0.7, 0.9, 0.08), Vector3(0, 6.0, -0.1))
+	# tronco fino e longo
+	n.put("a", Geo.prism([[-0.7, 6.1], [0.55, 6.1], [0.9, 7.1], [0.65, 8.4], [-0.55, 8.5], [-0.9, 7.3]], 1.6, 0.1))
+	n.put("b", Geo.prism([[0.6, 6.5], [0.95, 7.1], [0.7, 8.1], [0.55, 7.2]], 1.0, 0.05))
+	n.put("c", Geo.bx(1.64, 0.18, 1.5, 0.02), Vector3(0, 6.75, 0.0), Vector3(0, 0, 0.18))
+	# pescoço longo, cabeça com bico-sensor e penacho
+	beam(n, "c", Vector3(0, 8.35, 0.15), Vector3(0, 9.45, 0.8), 0.28, 0.3)
+	n.put("a", Geo.prism([[0.45, 9.35], [1.35, 9.42], [1.3, 9.72], [0.6, 9.82], [0.35, 9.6]], 0.48, 0.05))
+	n.put("d", Geo.prism([[1.3, 9.45], [2.55, 9.53], [1.3, 9.65]], 0.22, 0.02))
+	for x in [0.23, -0.23]: n.put("g", Geo.bx(0.04, 0.07, 0.18, 0.01), Vector3(x, 9.62, 1.1))
+	for k in 3: beam(n, "c", Vector3(0, 9.78, 0.6), Vector3((k - 1) * 0.12, 10.05 - k * 0.12, -0.7 - k * 0.25), 0.05, 0.03, 0.005)
+	# braços finos segurando uma arma longa (marcador de lugar: a arma vem na rodada de armas)
+	for s in [1.0, -1.0]: joint(n, Vector3(s * 0.95, 8.0, 0.0), 0.3)
+	beam(n, "a", Vector3(-0.95, 8.0, 0.0), Vector3(-1.15, 6.95, 0.35), 0.3, 0.32); beam(n, "c", Vector3(-1.15, 6.95, 0.35), Vector3(-0.75, 6.6, 1.1), 0.28, 0.3)
+	beam(n, "a", Vector3(0.95, 8.0, 0.0), Vector3(1.2, 7.0, 0.9), 0.3, 0.32); beam(n, "c", Vector3(1.2, 7.0, 0.9), Vector3(0.1, 6.85, 2.5), 0.28, 0.3)
+	beam(n, "c", Vector3(-0.75, 6.65, 0.5), Vector3(0.0, 6.85, 2.9), 0.28, 0.42, 0.03, Vector3.FORWARD)
+	Geo.rod(n, "d", Vector3(0.0, 6.88, 2.9), Vector3(0.45, 7.05, 7.4), 0.1); n.put("w", Geo.cyl_z(0.13, 0.13, 0.9, 10), Vector3(-0.25, 7.15, 1.6), Vector3(-0.04, 0.1, 0))
+	# propulsor dorsal com asas de garça
+	n.put("c", Geo.bx(1.3, 1.6, 0.9, 0.1), Vector3(0, 7.6, -0.9)); n.put("b", Geo.bx(1.32, 0.2, 0.92, 0.02), Vector3(0, 8.3, -0.9))
+	for s in [1.0, -1.0]:
+		n.put("d", Geo.cyl_z(0.26, 0.34, 0.7, 12), Vector3(s * 0.38, 6.95, -1.45)); n.put("g", Geo.cyl_z(0.22, 0.22, 0.05, 12), Vector3(s * 0.38, 6.95, -1.82))
+		var root := Vector3(s * 0.65, 8.0, -1.05); var elbow := Vector3(s * 3.1, 9.7, -1.7); var tip := Vector3(s * 6.9, 9.1, -2.6)
+		joint(n, root, 0.32); beam(n, "c", root, elbow, 0.34, 0.3); joint(n, elbow, 0.26); beam(n, "c", elbow, tip, 0.26, 0.24)
+		beam(n, "b", root + Vector3(0, 0.22, 0), elbow + Vector3(0, 0.2, 0), 0.12, 0.34, 0.02); beam(n, "b", elbow + Vector3(0, 0.18, 0), tip + Vector3(0, 0.14, 0), 0.1, 0.3, 0.02)
+		n.put("d", Geo.cyl_z(0.16, 0.2, 0.5, 10), elbow + Vector3(0, -0.25, -0.2)); n.put("g", Geo.cyl_z(0.13, 0.13, 0.04, 10), elbow + Vector3(0, -0.25, -0.46))
+		# penas: secundárias ao longo do braço da asa, primárias mais longas na ponta
+		for i in 18:
+			var t := i / 17.0
+			var p := root.lerp(elbow, t * 2.0) if t < 0.5 else elbow.lerp(tip, (t - 0.5) * 2.0)
+			var L := 1.9 + t * 2.1
+			var d := Vector3(s * (0.15 + t * 0.6), -1.0, -0.45 - t * 0.35).normalized()
+			var off := Vector3(0, 0, -0.035 * (i % 2))
+			beam(n, "a", p + off, p + off + d * L * 0.8, 0.78 - t * 0.2, 0.05, 0.01, Vector3.BACK)
+			beam(n, "c", p + off + d * L * 0.8, p + off + d * L, 0.66 - t * 0.18, 0.05, 0.01, Vector3.BACK)
+		for i in 11:
+			var t := i / 10.0
+			var p := root.lerp(elbow, t * 2.0) if t < 0.5 else elbow.lerp(tip, (t - 0.5) * 2.0)
+			beam(n, "a", p + Vector3(0, 0.06, 0.12), p + Vector3(s * (0.12 + t * 0.3), -1.0, -0.3), 0.78, 0.06, 0.01, Vector3.BACK)
+			beam(n, "b", p + Vector3(0, 0.08, 0.16), p + Vector3(s * 0.1, -0.35, 0.02), 0.7, 0.05, 0.01, Vector3.BACK)
+	Geo.decal(n, "n4", Vector3(0.82, 7.4, 0.62), Vector3(0, 0.5, 0), 0.4, 0.55)
 	return n
 
 static func tsk_kitsune() -> Geo.N:
