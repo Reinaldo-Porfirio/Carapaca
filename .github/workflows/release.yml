@@ -1,0 +1,66 @@
+# Compila o jogo para Windows, Linux, macOS e Web quando uma release é publicada
+# (ou manualmente pela aba Actions), anexa os arquivos à release e publica a versão web no GitHub Pages.
+name: Compilar e publicar
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  GODOT_VERSION: 4.6.2
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Godot e modelos de exportação
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+          unzip -q Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip && mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          unzip -q Godot_v${GODOT_VERSION}-stable_export_templates.tpz -d tpl && mv tpl/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+      - name: Exportar
+        run: |
+          mkdir -p build/windows build/linux build/macos build/web dist
+          ./godot --headless --path game --import || true
+          ./godot --headless --path game --export-release "Windows" ../build/windows/Carcaca.exe
+          ./godot --headless --path game --export-release "Linux" ../build/linux/Carcaca.x86_64
+          ./godot --headless --path game --export-release "macOS" ../build/macos/Carcaca.zip
+          ./godot --headless --path game --export-release "Web" ../build/web/index.html
+          (cd build/windows && zip -q -r ../../dist/Carcaca-Windows.zip .)
+          (cd build/linux && chmod +x Carcaca.x86_64 && tar -czf ../../dist/Carcaca-Linux.tar.gz .)
+          cp build/macos/Carcaca.zip dist/Carcaca-macOS.zip
+          (cd build/web && zip -q -r ../../dist/Carcaca-Web.zip .)
+          touch build/web/.nojekyll
+      - name: Anexar à release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+      - name: Guardar arquivos
+        uses: actions/upload-artifact@v4
+        with:
+          name: carcaca-builds
+          path: dist/*
+      - name: Preparar Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  pages:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
