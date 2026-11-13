@@ -12,7 +12,7 @@ const PAINT := {
 
 ## Porte final de cada conceito em relação ao modelo-base (Carcaça ≈ 8 m).
 const SCALE := { "tsk_gaviao": 1.5, "tsk_andorinha": 1.6, "tsk_duelista": 1.2, "tsk_fenix": 1.25, "tsk_kitsune": 1.4, "mrs_lince": 1.45,
-	"suc_ratazana": 1.7, "hb_haubitze": 1.15, "hb_panzer": 1.2, "suc_guindasteiro": 1.3, "suc_rei": 1.5, "nle_mariposa": 1.4 }
+	"suc_ratazana": 1.7, "hb_haubitze": 1.15, "hb_panzer": 1.2, "suc_guindasteiro": 1.3, "nle_mariposa": 1.4 }
 
 const LIST := [
 	["hb_bastiao", "HB"], ["hb_fortaleza", "HB"], ["hb_assalto", "HB"], ["hb_haubitze", "HB"], ["hb_panzer", "HB"], ["hb_inspektor", "HB"],
@@ -818,20 +818,87 @@ static func suc_remendo() -> Geo.N:
 	Geo.decal(n, "mkQF", Vector3(-0.2, 5.0, 1.52), Vector3(0, 0, PI + 0.2), 1.2, 0.47); Geo.decal(n, "n7", Vector3(0.95, 5.2, 1.2), Vector3(0, 0.6, -0.3), 0.5, 0.65)
 	return n
 
+## Corrente de elos alternados entre a e b.
+static func chain(n: Geo.N, a: Vector3, b: Vector3, link := 0.32, slot = "d") -> void:
+	var len := a.distance_to(b); var k := maxi(2, int(len / (link * 1.4)))
+	var dir := (b - a) / len
+	var yaw := atan2(dir.x, dir.z); var pitch := -asin(clampf(dir.y, -1, 1))
+	for i in k:
+		var p := a.lerp(b, (i + 0.5) / k)
+		n.put(slot, Geo.tor(link * 0.5, link * 0.12, 4, 10), p, Vector3(pitch + PI / 2, yaw, (PI / 2) * (i % 2)), [1.0, 1.6, 1.0])
+
+## Bola de demolição com cintas soldadas e argola.
+static func wrecking_ball(n: Geo.N, c: Vector3, r: float) -> void:
+	n.put("k", Geo.sph(r, 14, 10), c)
+	n.put("c", Geo.tor(r * 1.0, r * 0.08, 5, 22), c, Vector3(PI / 2, 0, 0)); n.put("c", Geo.tor(r * 1.0, r * 0.08, 5, 22), c, Vector3(0, PI / 2, 0))
+	n.put("d", Geo.tor(r * 0.3, r * 0.08, 5, 12), c + Vector3(0, r + r * 0.25, 0))
+	for k in 6: n.put("d", Geo.cone(r * 0.12, r * 0.3, 6), c + Vector3(cos(k * 1.05) * r * 0.96, sin(k * 1.9) * r * 0.3, sin(k * 1.05) * r * 0.96), Vector3(0, 0, -cos(k * 1.05) * PI / 2))
+
+## Rei da Sucata: 15 m, chassi de escavadeira, tronco de ônibus, bolas de demolição e coroa de vergalhão.
 static func suc_rei() -> Geo.N:
 	var n := Geo.N.new("c")
-	leg(n, Vector3(2.6, 6.5, 0), Vector3(3.2, 3.6, -1.6), Vector3(3.2, 0.9, 0), 2.0, 1.6, "c", "a"); n.put("k", Geo.bx(2.6, 0.9, 3.8, 0.12), Vector3(3.2, 0.45, 0.4))
-	for k in 6: n.put("k", Geo.tor(1.05, 0.42, 8, 18), Vector3(-2.8, 0.42 + k * 0.84, 0), Vector3(PI / 2, 0, 0))
-	beam(n, "d", Vector3(-2.8, 5.0, 0), Vector3(-1.0, 6.8, 0), 0.8, 0.8)
-	n.put("b", Geo.bx(9.0, 3.2, 3.0, 0.2), Vector3(0, 8.4, 0)); n.put("a", Geo.bx(9.05, 0.5, 3.05, 0.04), Vector3(0, 9.7, 0))
-	for i in 7: n.put("w", Geo.bx(0.9, 0.9, 0.05, 0.01), Vector3(-3.6 + i * 1.2, 8.9, 1.52))
-	n.put("g", Geo.bx(0.5, 0.3, 0.05, 0.01), Vector3(4.2, 7.4, 1.52)); n.put("g", Geo.bx(0.5, 0.3, 0.05, 0.01), Vector3(3.4, 7.4, 1.52))
-	n.put("c", Geo.cyl(0.8, 1.0, 1.0, 12), Vector3(-3.4, 10.4, 0)); beam(n, "hz", Vector3(-3.4, 10.8, 0), Vector3(-6.2, 14.6, 2.0), 0.6, 0.6)
-	Geo.rod(n, "k", Vector3(-6.2, 14.4, 2.0), Vector3(-6.2, 8.5, 2.0), 0.08); n.put("k", Geo.sph(1.3, 12, 8), Vector3(-6.2, 7.3, 2.0))
-	beam(n, "c", Vector3(4.6, 8.6, 0), Vector3(6.0, 6.8, 1.6), 0.9, 0.9); n.put("d", Geo.cone(0.9, 2.2, 12), Vector3(6.4, 6.2, 3.2), Vector3(PI / 2 + 0.3, 0, 0))
-	for p in ring_pts(1.3, 10.4, 7): Geo.rod(n, "d", Vector3(p.x + 1.6, 10.0, p.z), Vector3(p.x * 1.15 + 1.6, 11.6, p.z * 1.15), 0.08)
-	n.put("hz", Geo.tor(1.35, 0.12, 5, 20), Vector3(1.6, 10.6, 0), Vector3(PI / 2, 0, 0))
-	Geo.decal(n, "warn", Vector3(-1.5, 7.6, 1.52), Vector3(0, 0, 0.15), 2.2, 1.0); Geo.decal(n, "n9", Vector3(1.6, 7.6, 1.53), Vector3.ZERO, 0.8, 1.0)
+	# chassi de escavadeira
+	for s in [1.0, -1.0]:
+		n.put("t", Geo.prism([[-4.2, 0.0], [3.6, 0.0], [4.5, 0.9], [3.9, 1.8], [-3.8, 1.8], [-4.8, 0.9]], 1.6, 0.08), Vector3(s * 2.8, 0, 0))
+		for k in 6: n.put("d", Geo.cyl_x(0.55, 1.66, 12), Vector3(s * 2.8, 0.62, -3.2 + k * 1.3))
+		n.put("c", Geo.cyl_x(0.8, 1.7, 12), Vector3(s * 2.8, 1.0, 3.95)); n.put("hz", Geo.cyl_x(0.82, 0.3, 12), Vector3(s * 3.6, 1.0, 3.95))
+		n.put("b", Geo.bx(0.4, 0.5, 6.0, 0.04), Vector3(s * 2.8, 1.95, 0.0))
+	n.put("c", Geo.bx(4.0, 0.8, 3.0, 0.1), Vector3(0, 1.5, 0))
+	n.put("d", Geo.cyl(2.2, 2.3, 0.6, 22), Vector3(0, 2.2, 0)); n.put("hz", Geo.cyl(2.32, 2.32, 0.2, 22), Vector3(0, 2.0, 0))
+	n.put("a", Geo.bx(5.0, 2.2, 5.0, 0.2), Vector3(0, 3.6, -0.3))
+	n.put("c", Geo.prism([[-4.4, 2.6], [-2.6, 2.6], [-2.6, 4.8], [-4.0, 4.6]], 5.2, 0.15)); n.put("hz", Geo.bx(5.25, 0.5, 0.2, 0.03), Vector3(0, 3.4, -4.32))
+	n.put("b", Geo.bx(1.6, 1.4, 1.6, 0.08), Vector3(1.6, 5.3, 1.4)); n.put("w", Geo.bx(1.4, 0.6, 0.05, 0.01), Vector3(1.6, 5.5, 2.21))
+	# cintura e tronco de ônibus
+	n.put("d", Geo.cyl(1.2, 1.4, 1.2, 14), Vector3(0, 5.2, -0.3))
+	n.put("b", Geo.prism([[-1.8, 5.8], [1.8, 5.8], [2.2, 7.0], [2.0, 10.6], [-1.7, 10.8], [-2.1, 8.0]], 5.6, 0.25))
+	n.put("a", Geo.bx(5.62, 0.6, 3.9, 0.05), Vector3(0, 10.5, 0.1))
+	for k in 4:
+		var wx := -1.95 + k * 1.3
+		n.put("w", Geo.bx(1.1, 1.2, 0.06, 0.01), Vector3(wx, 9.2, 2.07))
+		if k != 2: n.put("g", Geo.bx(0.9, 1.0, 0.05, 0.005), Vector3(wx, 9.2, 2.1))
+	n.put("k", Geo.bx(3.0, 1.2, 0.2, 0.04), Vector3(0, 6.9, 2.15))
+	for k in 5: n.put("d", Geo.bx(2.8, 0.06, 0.08, 0.01), Vector3(0, 6.45 + k * 0.22, 2.27))
+	for s in [1.0, -1.0]: n.put("g", Geo.cyl_z(0.28, 0.28, 0.1, 12), Vector3(s * 1.95, 7.0, 2.2))
+	var patches := [["cer", Vector3(1.4, 8.0, 2.12), Vector3(0, 0, 0.2), Vector3(1.2, 0.9, 0.08)], ["hz", Vector3(-1.5, 7.8, 2.13), Vector3(0, 0, -0.3), Vector3(1.0, 0.7, 0.08)], ["c", Vector3(2.8, 8.4, 0.5), Vector3(0, PI / 2, 0.15), Vector3(1.6, 1.4, 0.1)], ["a", Vector3(-2.82, 7.6, -0.4), Vector3(0, PI / 2, -0.2), Vector3(1.8, 1.2, 0.1)]]
+	for pc in patches: n.put(pc[0], Geo.bx(pc[3].x, pc[3].y, pc[3].z, 0.02), pc[1], pc[2])
+	Geo.decal(n, "n9", Vector3(0.0, 8.0, 2.14), Vector3(0, 0, 0.1), 0.9, 1.1); Geo.decal(n, "warn", Vector3(2.83, 6.6, -0.6), Vector3(0, PI / 2, 0.1), 1.8, 0.85)
+	Geo.decal(n, "mkHB", Vector3(-2.83, 9.6, 0.6), Vector3(0, -PI / 2, PI), 1.4, 0.55)
+	# ombros: pilha de pneus de um lado, bloco de motor do outro
+	for k in 3: n.put("k", Geo.tor(0.95, 0.42, 8, 18), Vector3(3.4, 10.4 + k * 0.6, 0.0), Vector3(0, 0, 0.2))
+	n.put("c", Geo.bx(2.2, 1.6, 2.2, 0.15), Vector3(-3.4, 10.6, 0.0)); n.put("d", Geo.bx(2.0, 0.6, 1.6, 0.06), Vector3(-3.4, 11.7, 0.0))
+	for k in 4: n.put("k", Geo.cyl(0.18, 0.18, 0.6, 8), Vector3(-4.0 + k * 0.4, 12.2, 0.0))
+	# braços de escavadeira com garras segurando cabos e bolas de demolição
+	var balls := [Vector3(6.4, 1.6, 5.2), Vector3(-9.0, 5.4, 4.4)]
+	for i in 2:
+		var s: float = 1.0 if i == 0 else -1.0
+		var sh := Vector3(s * 3.4, 9.6, 0.2); var el := Vector3(s * 5.4, 7.8, 1.6); var wr := Vector3(s * 5.9, 6.3, 3.6)
+		n.put("d", Geo.sph(0.75, 12, 8), sh); beam(n, "a", sh, el, 0.9, 1.1, 0.1); n.put("d", Geo.cyl_x(0.5, 1.3, 12), el)
+		beam(n, "c", el, wr, 0.75, 0.9, 0.08)
+		Geo.piston(n, sh + Vector3(0, 0.8, -0.3), el + Vector3(0, 0.7, -0.2), 0.2); Geo.piston(n, el + Vector3(0, 0.5, 0.1), wr + Vector3(0, 0.6, 0.0), 0.16)
+		n.put("c", Geo.bx(1.0, 0.8, 1.0, 0.08), wr)
+		for t in [-0.3, 0.3]: beam(n, "d", wr + Vector3(t, -0.3, 0.3), wr + Vector3(t * 0.6, -1.0, 0.7), 0.18, 0.2, 0.02)
+		var hook := wr + Vector3(0, -1.0, 0.7); var ball: Vector3 = balls[i]; var r := 1.3
+		var top := ball + Vector3(0, r + 0.4, 0)
+		var mid := hook.lerp(top, 0.65)
+		Geo.rod(n, "k", hook, mid, 0.13); chain(n, mid, top, 0.4)
+		wrecking_ball(n, ball, r)
+	# cabeça de tambor de óleo com coroa de vergalhão
+	n.put("d", Geo.cyl(0.5, 0.6, 0.5, 12), Vector3(0, 11.1, 0.2))
+	n.put("a", Geo.cyl(0.85, 0.85, 1.5, 16), Vector3(0, 12.0, 0.3))
+	for y in [11.5, 12.5]: n.put("c", Geo.tor(0.86, 0.06, 4, 18), Vector3(0, y, 0.3), Vector3(PI / 2, 0, 0))
+	for s in [1.0, -1.0]: n.put("g", Geo.cyl_z(0.18, 0.18, 0.1, 10), Vector3(s * 0.32, 12.15, 1.13))
+	n.put("k", Geo.bx(0.8, 0.25, 0.1, 0.02), Vector3(0, 11.7, 1.12))
+	for k in 4: n.put("d", Geo.bx(0.06, 0.25, 0.12, 0.005), Vector3(-0.3 + k * 0.2, 11.7, 1.16))
+	n.put("hz", Geo.tor(0.95, 0.12, 5, 20), Vector3(0, 12.85, 0.3), Vector3(PI / 2, 0, 0))
+	for k in 8:
+		var a := k * TAU / 8
+		var b0 := Vector3(cos(a) * 0.92, 12.85, 0.3 + sin(a) * 0.92); var b1 := Vector3(cos(a) * 1.1, 13.9 + (0.35 if k % 2 == 0 else 0.0), 0.3 + sin(a) * 1.1)
+		Geo.rod(n, "d", b0, b1, 0.07); n.put("g" if k % 2 == 0 else "b", Geo.sph(0.12, 6, 4), b1)
+	for k in 4: n.put("b", Geo.cyl_z(0.16, 0.16, 0.05, 10), Vector3(cos(k * PI / 2 + PI / 4) * 0.97, 12.85, 0.3 + sin(k * PI / 2 + PI / 4) * 0.97), Vector3(0, -(k * PI / 2 + PI / 4) + PI / 2, 0))
+	# escapamentos e bandeira nas costas
+	for s in [1.0, -1.0]: Geo.rod(n, "k", Vector3(s * 1.2, 9.5, -2.0), Vector3(s * 1.5, 13.0, -2.4), 0.22)
+	Geo.rod(n, "d", Vector3(-1.9, 10.6, -1.8), Vector3(-2.2, 14.6, -2.0), 0.06); n.put("b", Geo.bx(0.05, 1.0, 1.5, 0.01), Vector3(-2.2, 14.0, -2.75))
+	Geo.decal(n, "n7", Vector3(-2.15, 14.0, -2.75), Vector3(0, PI / 2, 0), 0.6, 0.75)
 	return n
 
 static func suc_cacamba() -> Geo.N:
