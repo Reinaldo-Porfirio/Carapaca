@@ -1,5 +1,6 @@
 # Compila o jogo para Windows, Linux, macOS e Web quando uma release é publicada
-# (ou manualmente pela aba Actions), anexa os arquivos à release e publica a versão web no GitHub Pages.
+# (ou manualmente pela aba Actions) e anexa os arquivos à release.
+# A versão web do GitHub Pages é servida pelo ramo gh-pages.
 name: Compilar e publicar
 
 on:
@@ -9,8 +10,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 env:
   GODOT_VERSION: 4.6.2
@@ -39,7 +38,6 @@ jobs:
           (cd build/linux && chmod +x Carcaca.x86_64 && tar -czf ../../dist/Carcaca-Linux.tar.gz .)
           cp build/macos/Carcaca.zip dist/Carcaca-macOS.zip
           (cd build/web && zip -q -r ../../dist/Carcaca-Web.zip .)
-          touch build/web/.nojekyll
       - name: Anexar à release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
@@ -50,17 +48,3 @@ jobs:
         with:
           name: carcaca-builds
           path: dist/*
-      - name: Preparar Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
-  pages:
-    needs: build
-    runs-on: ubuntu-24.04
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4
