@@ -10,6 +10,9 @@ func setup(args: Dictionary) -> void:
 		var cam := Camera3D.new(); cam.fov = 62; cam.near = 0.5; cam.far = 2400; add_child(cam)
 		cam.position = m.root.position + Vector3(4, 10, -22); cam.look_at(m.root.position + Vector3(0, 7, 30))
 		Settings.apply_viewport(get_viewport())
+		if args.has("seq"):
+			seq_n = int(args.seq); seq_cam = cam; seq_step = Vector3(float(args.get("dx", 0.0)), 0, float(args.get("dz", 0.12)))
+			if args.has("cy"): cam.position.y = float(args.cy); cam.look_at(m.root.position + Vector3(0, 0, 60))
 		return
 	var env := WorldEnvironment.new(); var e := Environment.new()
 	var sky := Sky.new(); var ps := ProceduralSkyMaterial.new(); ps.sky_top_color = Color("#3a4250"); ps.sky_horizon_color = Color("#8a8f96"); ps.ground_bottom_color = Color("#2a2826"); ps.ground_horizon_color = Color("#6a6a6a"); sky.sky_material = ps
@@ -44,8 +47,18 @@ func setup(args: Dictionary) -> void:
 			g.position = -aabb.get_center(); holder.scale = Vector3.ONE * 6.0 / maxf(aabb.size.x, maxf(aabb.size.y, aabb.size.z))
 			holder.position = Vector3((i % cols - (cols - 1) / 2.0) * 9, 4, -floor(i / float(cols)) * 10); holder.rotation.y = ang
 		var cam := Camera3D.new(); cam.fov = 30; cam.near = 0.5; cam.far = 1500; add_child(cam); cam.position = Vector3(0, 16, 46); cam.look_at(Vector3(0, 3, -6))
+var seq_n := 0
+var seq_cam: Camera3D
+var seq_step := Vector3.ZERO
 func _process(_d: float) -> void:
 	frames += 1
+	if seq_n > 0:
+		if frames >= 6:
+			var k := frames - 6
+			get_viewport().get_texture().get_image().save_png(out.replace(".png", "_%02d.png" % k))
+			if k + 1 >= seq_n: get_tree().quit()
+		seq_cam.position += seq_cam.global_transform.basis * seq_step
+		return
 	if frames == 6:
 		get_viewport().get_texture().get_image().save_png(out)
 		printerr("saved ", out)

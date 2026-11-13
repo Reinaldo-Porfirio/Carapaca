@@ -46,8 +46,8 @@ void fragment() {
 	else if (s == 15) { emi = vec3(1.0, 0.12, 0.06) * 4.0; alb = vec3(0.5, 0.05, 0.02); }
 	else if (s == 16) { // escória incandescente
 		float flow = texture(noise_tex, wp.xz * 0.05 + vec2(time_s * 0.01, time_s * 0.004)).r;
-		float crust = smoothstep(0.55, 0.75, texture(noise_tex, wp.xz * 0.13 - vec2(time_s * 0.006, 0.0)).g);
-		emi = mix(vec3(1.0, 0.32, 0.05) * (2.5 + flow * 3.0), vec3(0.05, 0.02, 0.01), crust); alb = vec3(0.1, 0.04, 0.02); rou = 0.6;
+		float crust = smoothstep(0.45, 0.72, texture(noise_tex, wp.xz * 0.13 - vec2(time_s * 0.006, 0.0)).g);
+		emi = mix(vec3(1.0, 0.3, 0.04) * (1.3 + flow * 2.2), vec3(0.05, 0.02, 0.01), crust); alb = vec3(0.1, 0.04, 0.02); rou = 0.6;
 	}
 	else if (s == 17) { emi = vec3(1.0, 0.82, 0.55) * 2.6 * (0.6 + hash12(floor(pp * 0.8)) * 0.6); alb = vec3(0.4); }
 	else if (s == 18) { emi = vec3(1.0, 0.62, 0.3) * 6.0; alb = vec3(1.0); }

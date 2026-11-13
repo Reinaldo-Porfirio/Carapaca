@@ -201,7 +201,7 @@ func _fundicao(R: float) -> void:
 		var w := absf(x1 - x0); var d := absf(z1 - z0); var cx := (x0 + x1) / 2; var cz := (z0 + z1) / 2
 		n.put("lava", Geo.bx(w, 0.3, d, 0.02), Vector3(cx, 0.12, cz))
 		hazards.append({ "type": "heat", "x0": minf(x0, x1), "x1": maxf(x0, x1), "z0": minf(z0, z1), "z1": maxf(z0, z1) }); ch.append([cx, cz, w, d])
-		n.put("dark", Geo.bx(w + (0.0 if w > d else 2.4), 0.7, d + (2.4 if w > d else 0.0), 0.1), Vector3(cx, 0.05, cz))
+		n.put("dark", Geo.bx(w + (0.0 if w > d else 2.4), 0.7, d + (2.4 if w > d else 0.0), 0.1), Vector3(cx, -0.2, cz))
 	var o1: float = rng.rr(-50, -25); var o2: float = rng.rr(25, 50)
 	chan.call(-R, o1 - 5, R, o1 + 5); chan.call(o2 - 5, -R * 0.2, o2 + 5, R); chan.call(-o2 - 4, -R, -o2 + 4, o1 - 5)
 	_add_light(Vector3(0, 5, o1), Color("#ff5a10"), 6.0, 160.0); _add_light(Vector3(o2, 5, R * 0.4), Color("#ff5a10"), 6.0, 150.0)
@@ -286,7 +286,9 @@ func _fence(R: float, c: Color) -> void:
 	if circle:
 		var cm := CylinderMesh.new(); cm.top_radius = R; cm.bottom_radius = R; cm.height = 26; cm.radial_segments = 64; cm.cap_top = false; cm.cap_bottom = false; mi.mesh = cm
 	else:
-		var bm := BoxMesh.new(); bm.size = Vector3(R * 2, 26, R * 2); mi.mesh = bm
+		# só as quatro paredes: uma tampa inferior ficaria no plano do chão e piscaria (z-fighting + faixas animadas)
+		var cm := CylinderMesh.new(); cm.top_radius = R * sqrt(2.0); cm.bottom_radius = R * sqrt(2.0); cm.height = 26; cm.radial_segments = 4; cm.rings = 1
+		cm.cap_top = false; cm.cap_bottom = false; mi.mesh = cm; mi.rotation.y = PI / 4
 	mi.material_override = fm; mi.position.y = 13; add_child(mi)
 
 func _weather(o: Dictionary) -> void:
