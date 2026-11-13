@@ -55,6 +55,7 @@ static func mech_material(paint: Dictionary) -> ShaderMaterial:
 	m.set_shader_parameter("decal_ink", Color("#1a1b1d") if lum(a) > 0.32 else Color("#e8e4d8"))
 	m.set_shader_parameter("noise_tex", noise)
 	m.set_shader_parameter("decal_tex", decal_tex)
+	m.set_shader_parameter("heat", 0.0); m.set_shader_parameter("track_scroll", 0.0); m.set_shader_parameter("cloak", 0.0)
 	return m
 
 static func flame_material(col: Color) -> ShaderMaterial:

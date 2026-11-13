@@ -232,6 +232,7 @@ class N:
 	var out = 0
 	var fv = 0
 	var slots := Geo.SLOT
+	var div := 16.0
 	func _init(name: String = "", _x = null) -> void:
 		g = Node3D.new(); g.name = name if name != "" else "n"
 	## Adiciona geometria com posição p, rotação r (euler XYZ) e escala s.
@@ -240,7 +241,7 @@ class N:
 		var bs := Geo.euler(r) * Basis.from_scale(sc)
 		var nb := bs.inverse().transposed()
 		var si: int = slots[slot] if slot is String else int(slot)
-		var c := Color(si / 16.0, 0, 0, 1)
+		var c := Color(si / div, 0, 0, 1)
 		var off := 0.0
 		if slot is String and slot == "dc": off = 0.018
 		for i in geo.v.size():
@@ -250,7 +251,7 @@ class N:
 	func translate_all(d: Vector3) -> void:
 		for i in v.size(): v[i] += d
 	func child(name: String, p: Vector3 = Vector3.ZERO, r: Vector3 = Vector3.ZERO) -> N:
-		var n := N.new(name); n.slots = slots
+		var n := N.new(name); n.slots = slots; n.div = div
 		n.g.position = p; n.g.basis = Geo.euler(r)
 		g.add_child(n.g); kids.append(n); return n
 	func attach(n: N, p = null, r = null) -> N:

@@ -4,6 +4,13 @@ var out := ""
 var frames := 0
 func setup(args: Dictionary) -> void:
 	out = args.get("out", "/tmp/view.png")
+	if args.get("mode", "") == "arena":
+		var ar := Arena.new(); add_child(ar); ar.build(args.get("arena", "coliseu"), int(args.get("seed", 1)))
+		var m := Builder.build_mech(D.RIVALS[int(args.get("r", 9))].build); add_child(m.root); m.root.position = ar.spawn_p + Vector3(0, ar.ground_at(ar.spawn_p.x, ar.spawn_p.z), 0)
+		var cam := Camera3D.new(); cam.fov = 62; cam.near = 0.5; cam.far = 2400; add_child(cam)
+		cam.position = m.root.position + Vector3(4, 10, -22); cam.look_at(m.root.position + Vector3(0, 7, 30))
+		Settings.apply_viewport(get_viewport())
+		return
 	var env := WorldEnvironment.new(); var e := Environment.new()
 	var sky := Sky.new(); var ps := ProceduralSkyMaterial.new(); ps.sky_top_color = Color("#3a4250"); ps.sky_horizon_color = Color("#8a8f96"); ps.ground_bottom_color = Color("#2a2826"); ps.ground_horizon_color = Color("#6a6a6a"); sky.sky_material = ps
 	e.background_mode = Environment.BG_SKY; e.sky = sky; e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
