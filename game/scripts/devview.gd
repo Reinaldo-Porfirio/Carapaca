@@ -4,6 +4,35 @@ var out := ""
 var frames := 0
 func setup(args: Dictionary) -> void:
 	out = args.get("out", "/tmp/view.png")
+	if args.get("mode", "") == "dump":
+		# exporta triângulos de cada peça (para análise de faces sobrepostas/invertidas)
+		var f := FileAccess.open(out, FileAccess.WRITE)
+		var items := []
+		if args.get("what", "") == "mechs":
+			items.append({ "id": "starter", "b": D.STARTER_BUILD })
+			for r in D.RIVALS: items.append({ "id": "rv%d" % r.rank, "b": r.build })
+		else:
+			for p in D.PARTS: items.append({ "id": p.id })
+		for p in items:
+			var g: Node3D = Builder.build_mech(p.b).root if p.has("b") else Builder.build_part_preview(p.id, D.STARTER_BUILD.paint)
+			add_child(g)
+			var k := 0
+			for mi in g.find_children("*", "MeshInstance3D", true, false):
+				var m: Mesh = (mi as MeshInstance3D).mesh
+				if m == null or m.get_surface_count() == 0: continue
+				var xf: Transform3D = (mi as MeshInstance3D).global_transform
+				var arr := m.surface_get_arrays(0)
+				var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]; var c = arr[Mesh.ARRAY_COLOR]; var idx = arr[Mesh.ARRAY_INDEX]
+				var line := PackedStringArray([p.id, str(k), str(g.get_path_to(mi)).replace(" ", "_")])
+				var n: int = idx.size() if idx != null and idx.size() > 0 else v.size()
+				for i in n:
+					var j: int = idx[i] if idx != null and idx.size() > 0 else i
+					var q: Vector3 = xf * v[j]; var sl := -1.0
+					if c != null and c.size() > j: sl = c[j].r
+					line.append("%.4f,%.4f,%.4f,%.4f" % [q.x, q.y, q.z, sl])
+				f.store_line(" ".join(line)); k += 1
+			g.queue_free()
+		f.close(); printerr("dumped"); get_tree().quit(); return
 	if args.get("mode", "") == "arena":
 		var ar := Arena.new(); add_child(ar); ar.build(args.get("arena", "coliseu"), int(args.get("seed", 1)))
 		var m := Builder.build_mech(D.RIVALS[int(args.get("r", 9))].build); add_child(m.root); m.root.position = ar.spawn_p + Vector3(0, ar.ground_at(ar.spawn_p.x, ar.spawn_p.z), 0)

@@ -492,7 +492,7 @@ static func head_dome(def):
 	n.put("k", Geo.cyl(0.3, 0.36, 0.25, 8), Vector3(0, 0.1, 0))
 	n.put("c", Geo.cyl(0.7, 0.62, 0.4, 14), Vector3(0, 0.42, 0))
 	n.put("a", Geo.sph(0.68, 16, 8, 0, (PI * 2), 0, (PI / float(2))), Vector3(0, 0.6, 0))
-	n.put("k", Geo.bx(0.9, 0.24, 0.3, 0.04), Vector3(0, 0.5, 0.52))
+	n.put("k", Geo.bx(0.9, 0.24, 0.3, 0.04), Vector3(0, 0.485, 0.52))
 	for x in [-0.26, 0, 0.26]:
 		n.put("g", Geo.cyl_z(0.07, 0.07, 0.05, 8), Vector3(x, 0.5, 0.68))
 	n.put("d", Geo.cyl(0.025, 0.025, 1.3, 5), Vector3(0.5, 1.15, -0.3))
@@ -855,7 +855,7 @@ static func gen_model(def):
 		n.put("c", Geo.bx(1.9, 1.0, 0.8, 0.06), Vector3(0, 0, -0.35))
 		for _i in _rng(0, 7, 1):
 			var i = _i
-			n.put("d", Geo.bx(0.06, 1.1, 0.9, 0.01), Vector3((-0.75 + (i * 0.25)), 0, -0.4))
+			n.put("d", Geo.bx(0.06, 1.1, 0.9, 0.01), Vector3((-0.75 + (i * 0.25)), 0, -0.415))
 		n.put("g", Geo.bx(1.5, 0.08, 0.05, 0.01), Vector3(0, -0.3, -0.78))
 	elif (v == 2):
 		n.put("c", Geo.bx(1.1, 0.7, 0.6, 0.1), Vector3(0, 0, -0.3))
@@ -966,7 +966,7 @@ static func hand_smg(d):
 	n.put("c", Geo.bx(0.36, 0.55, 1.5, 0.06), Vector3(0, 0.38, 0.4))
 	n.put("k", Geo.bx(0.2, 0.5, 0.28, 0.04), Vector3(0, 0, 0), Vector3(0.2, 0, 0))
 	n.put("b", Geo.bx(0.4, 0.34, 0.7, 0.04), Vector3(0, 0.45, 0.9))
-	n.put("d", Geo.cyl_z(0.07, 0.07, 0.9, 8), Vector3(0, 0.42, 1.55))
+	n.put("d", Geo.cyl_z(0.07, 0.07, 0.9, 8), Vector3(0, 0.42, 1.58))
 	n.put("c", Geo.cyl_z(0.14, 0.14, 0.5, 8), Vector3(0, 0.42, 1.75))
 	n.put("c", Geo.bx(0.24, 1.0, 0.3, 0.03), Vector3(0, -0.3, 0.6))
 	n.put("a", Geo.prism([[-0.2, 0.66], [0.9, 0.66], [0.7, 0.86], [-0.1, 0.86]], 0.2, 0.03))
@@ -979,7 +979,7 @@ static func hand_shotgun(d):
 	n.put("k", Geo.bx(0.22, 0.5, 0.3, 0.04), Vector3(0, 0, 0), Vector3(0.2, 0, 0))
 	for s in [1.0, -1.0]:
 		n.put("d", Geo.cyl_z(0.15, 0.15, 1.9, 10), Vector3((s * 0.17), 0.5, 2.0))
-	n.put("c", Geo.bx(0.7, 0.3, 0.3, 0.03), Vector3(0, 0.5, 2.8))
+	n.put("c", Geo.bx(0.7, 0.3, 0.3, 0.03), Vector3(0, 0.5, 2.78))
 	n.put("a", Geo.bx(0.56, 0.36, 0.9, 0.05), Vector3(0, 0.24, 1.6))
 	n.put("hz", Geo.bx(0.52, 0.16, 0.5, 0.02), Vector3(0, 0.72, 0.2))
 	n.put("c", Geo.prism([[-1.2, 0.1], [-0.5, 0.15], [-0.5, 0.65], [-1.2, 0.5]], 0.3, 0.04))
@@ -990,7 +990,7 @@ static func hand_pistol(d):
 	var n = Geo.N.new("w")
 	n.put("c", Geo.bx(0.42, 0.6, 1.3, 0.07), Vector3(0, 0.42, 0.55))
 	n.put("k", Geo.bx(0.24, 0.55, 0.32, 0.04), Vector3(0, 0, 0), Vector3(0.2, 0, 0))
-	n.put("a", Geo.bx(0.46, 0.3, 1.4, 0.05), Vector3(0, 0.66, 0.6))
+	n.put("a", Geo.bx(0.46, 0.3, 1.4, 0.05), Vector3(0, 0.66, 0.62))
 	n.put("d", Geo.cyl_z(0.17, 0.17, 0.5, 10), Vector3(0, 0.52, 1.4))
 	n.put("k", Geo.cyl_z(0.11, 0.11, 0.52, 8), Vector3(0, 0.52, 1.42))
 	n.mount("mz", Vector3(0, 0.52, 1.7))
@@ -1049,7 +1049,7 @@ static func hand_pulsegun(d):
 		n.put("a", Geo.prism([[0.6, 0.2], [2.2, 0.32], [2.2, 0.52], [0.6, 0.6]], 0.1, 0.03), Vector3((s * 0.2), 0, 0))
 	n.put("g", Geo.bx(0.1, 0.1, 1.3, 0.02), Vector3(0, 0.42, 1.5))
 	for z in [1.0, 1.4, 1.8]:
-		n.put("d", Geo.bx(0.5, 0.06, 0.06, 0.01), Vector3(0, 0.42, z))
+		n.put("d", Geo.bx(0.47, 0.06, 0.06, 0.01), Vector3(0, 0.42, z))
 	n.mount("mz", Vector3(0, 0.42, 2.25))
 	return n
 
@@ -1076,7 +1076,7 @@ static func hand_lrifle(d):
 		n.put("d", Geo.bx(0.44, 0.5, 0.08, 0.02), Vector3(0, 0.44, z))
 	n.put("c", Geo.cyl_z(0.11, 0.11, 0.8, 8), Vector3(0, 0.95, 0.4))
 	n.put("g", Geo.cyl_z(0.07, 0.07, 0.02, 8), Vector3(0, 0.95, 0.81))
-	n.put("b", Geo.bx(0.5, 0.36, 0.7, 0.05), Vector3(0, 0.3, -0.4))
+	n.put("b", Geo.bx(0.5, 0.36, 0.7, 0.05), Vector3(0, 0.285, -0.4))
 	n.mount("mz", Vector3(0, 0.46, 3.5))
 	return n
 
@@ -1115,7 +1115,7 @@ static func hand_linear(d):
 	n.put("c", Geo.bx(0.44, 0.62, 2.0, 0.07), Vector3(0, 0.42, 0.3))
 	n.put("k", Geo.bx(0.22, 0.5, 0.3, 0.04), Vector3(0, 0, 0), Vector3(0.2, 0, 0))
 	for s in [1.0, -1.0]:
-		n.put("a", Geo.bx(0.1, 0.4, 3.0, 0.03), Vector3((s * 0.17), 0.5, 2.6))
+		n.put("a", Geo.bx(0.1, 0.4, 3.0, 0.03), Vector3((s * 0.185), 0.5, 2.6))
 	for _i in _rng(0, 6, 1):
 		var i = _i
 		n.put("d", Geo.bx(0.5, 0.5, 0.08, 0.02), Vector3(0, 0.5, (1.4 + (i * 0.5))))
@@ -1156,7 +1156,7 @@ static func hand_eblade(d):
 
 static func hand_pile(d):
 	var n = Geo.N.new("w")
-	n.put("k", Geo.bx(0.24, 0.3, 0.8, 0.05), Vector3(0, 0, 0))
+	n.put("k", Geo.bx(0.24, 0.3, 0.8, 0.05), Vector3(0, 0, -0.02))
 	n.put("a", Geo.bx(0.8, 0.9, 2.6, 0.1), Vector3(0, 0.2, 0.9))
 	n.put("b", Geo.bx(0.86, 0.3, 1.6, 0.05), Vector3(0, 0.55, 1.0))
 	n.put("c", Geo.cyl_z(0.3, 0.3, 0.8, 10), Vector3(0, 0.2, 2.5))
@@ -1166,7 +1166,7 @@ static func hand_pile(d):
 	sp.put("d", Geo.cyl_z(0.17, 0.17, 2.6, 10), Vector3(0, 0, 1.0))
 	sp.put("d", Geo.cone(0.17, 0.7, 10), Vector3(0, 0, 2.65), Vector3((PI / float(2)), 0, 0))
 	n.spike = sp.g
-	n.put("hz", Geo.bx(0.82, 0.2, 0.4, 0.02), Vector3(0, -0.2, 2.0))
+	n.put("hz", Geo.bx(0.82, 0.2, 0.4, 0.02), Vector3(0, -0.2, 1.98))
 	Geo.decal(n, "warn", Vector3(0.41, 0.2, 0.9), Vector3(0, (PI / float(2)), 0), 0.9, 0.42)
 	n.mount("mz", Vector3(0, 0.2, 3.6))
 	n.mount("tip", Vector3(0, 0.2, 4.6))
@@ -1290,7 +1290,7 @@ static func back_cannon(d, s):
 	pv.put("a", Geo.cyl_z(0.42, 0.5, 1.4, 12), Vector3(0, 0, 1.5))
 	pv.put("d", Geo.cyl_z(0.3, 0.34, 3.4, 12), Vector3(0, 0, 3.6))
 	pv.put("c", Geo.bx(0.9, 0.7, 0.8, 0.06), Vector3(0, 0, 5.3))
-	pv.put("k", Geo.cyl_z(0.26, 0.26, 0.84, 10), Vector3(0, 0, 5.32))
+	pv.put("k", Geo.cyl_z(0.26, 0.26, 0.84, 10), Vector3(0, 0, 5.34))
 	for i in [1.0, -1.0]:
 		pv.put("k", Geo.bx(0.1, 0.4, 0.2, 0.01), Vector3((i * 0.46), 0, 5.2))
 		Geo.piston(pv, Vector3((i * 0.5), 0.3, 0.6), Vector3((i * 0.42), 0.25, 2.2), 0.07)
@@ -1307,7 +1307,7 @@ static func back_gatling(d, s):
 	var pv = n.child("pv", Vector3(0, 0.95, 0.3))
 	pv.put("c", Geo.bx(1.0, 1.0, 1.6, 0.1), Vector3(0, 0, 0))
 	pv.put("a", Geo.bx(0.7, 1.2, 1.2, 0.08), Vector3((-s * 0.8), -0.3, -0.2))
-	pv.put("hz", Geo.bx(0.74, 0.2, 1.24, 0.02), Vector3((-s * 0.8), 0.2, -0.2))
+	pv.put("hz", Geo.bx(0.74, 0.2, 1.24, 0.02), Vector3((-s * 0.8), 0.215, -0.2))
 	var sp = pv.child("spin", Vector3(0, 0, 0.8))
 	for _i in _rng(0, 6, 1):
 		var i = _i
@@ -1447,7 +1447,7 @@ static func sh_flare(d, s):
 static func sh_smissile(d, s):
 	var n = Geo.N.new("sh")
 	n.put("a", Geo.bx(0.9, 0.7, 1.6, 0.07), Vector3(0, 0.4, 0.1))
-	n.put("b", Geo.bx(0.94, 0.74, 0.12, 0.02), Vector3(0, 0.4, 0.84))
+	n.put("b", Geo.bx(0.94, 0.74, 0.12, 0.02), Vector3(0, 0.4, 0.86))
 	tubes(n, 3, 1, 0, 0.4, 0.9, 0.28, 0.11)
 	n.put("c", Geo.bx(0.4, 0.16, 0.8, 0.03), Vector3(0, 0.02, 0))
 	n.mount("mz", Vector3(0, 0.4, 1.0))

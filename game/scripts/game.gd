@@ -262,4 +262,10 @@ func update_camera(dt: float, snap := false) -> void:
 func dispose() -> void:
 	app.hud.end(); Sfx.set_boost(0)
 	if world: world.dispose()
+	for a in ais:
+		a.m = null; a.tgt = null
+	ais.clear(); player = null
+	if auto:
+		auto.m = null; auto.tgt = null
+	auto = null
 	queue_free()

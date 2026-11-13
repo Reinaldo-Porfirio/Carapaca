@@ -58,25 +58,39 @@ void fragment() {
 		}
 		base *= 0.93 + hash12(id) * 0.12;
 		vec3 dbg_base = base;
-		// sujeira e escorridos
-		float grime = smoothstep(0.35, 0.9, nz.r) * (0.25 + wear * 0.55);
-		float streak = smoothstep(0.55, 0.95, texture(noise_tex, vec2(pp.x * 0.7, pp.y * 0.06)).g) * wear * 0.5;
-		base = mix(base, base * vec3(0.42, 0.36, 0.3), clamp(grime + streak, 0.0, 0.85));
-		// lascas: tinta arrancada revela metal, mais perto das bordas das placas
-		float near_edge = 1.0 - smoothstep(0.0, 0.1, edge);
-		float chipth = 0.9 - wear * 0.16 - near_edge * 0.3;
-		float chip = smoothstep(chipth, chipth + 0.06, nz.g * 0.8 + nf.g * 0.2) * smoothstep(0.0, 0.5, wear + near_edge);
-		alb = mix(base, vec3(0.5, 0.49, 0.47), chip);
-		met = mix(s == 2 ? 0.45 : 0.15, 0.6, chip);
-		rou = mix(0.62 + grime * 0.3 - nz.b * 0.1, 0.38, chip);
+		float vert = 1.0 - w.y; // faces verticais recebem escorridos
+		// ruído fino (≈ 30 cm) para lascas e microvariação
+		vec3 nc = texture(noise_tex, lp.zy * 1.7 + 0.57).rgb * w.x + texture(noise_tex, lp.xz * 1.7 + 0.57).rgb * w.y + texture(noise_tex, lp.xy * 1.7 + 0.57).rgb * w.z;
+		float ncl = texture(noise_tex, lp.zy * 0.45 + 0.21).g * w.x + texture(noise_tex, lp.xz * 0.45 + 0.21).g * w.y + texture(noise_tex, lp.xy * 0.45 + 0.21).g * w.z;
+		// sujeira: manchas largas + acúmulo nos sulcos
+		float cavity = 1.0 - smoothstep(0.0, 0.07, edge);
+		float grime = smoothstep(0.45, 0.9, nz.r) * (0.15 + wear * 0.35) + cavity * (0.12 + wear * 0.2);
+		// escorridos finos só nas faces verticais, mais fortes logo abaixo das juntas
+		float sv = 1.0 - fract(cell.y);
+		float streak = smoothstep(0.6, 0.9, texture(noise_tex, vec2(pp.x * 2.3, pp.y * 0.11 + 0.3)).g) * vert * wear * (0.25 + 0.35 * smoothstep(0.5, 1.0, sv));
+		base = mix(base, base * vec3(0.55, 0.5, 0.45), clamp(grime + streak, 0.0, 0.7));
+		// desgaste de borda: chanfros (normal fora dos eixos) e beiradas das placas
+		float bevel = 1.0 - smoothstep(0.86, 0.97, max(an.x, max(an.y, an.z)));
+		float near_edge = 1.0 - smoothstep(0.0, 0.05, edge);
+		float expo = clamp(bevel * 0.8 + near_edge * 0.5, 0.0, 1.0);
+		float cn = ncl * 0.55 + nc.g * 0.45;
+		float chipth = 0.95 - wear * 0.18 - expo * 0.3;
+		float amt = smoothstep(0.0, 0.35, wear);
+		float chip = smoothstep(chipth, chipth + 0.02, cn) * amt;
+		float primer = (smoothstep(chipth - 0.035, chipth, cn) - chip) * amt;
+		vec3 steel = vec3(0.24, 0.235, 0.23) * (0.85 + nc.b * 0.3);
+		base *= 1.0 - primer * 0.35;
+		alb = mix(base, steel, chip);
+		met = mix(s == 2 ? 0.45 : 0.12, 0.7, chip);
+		rou = mix(0.58 + grime * 0.3 - nz.b * 0.08 + nc.r * 0.08, 0.55 + nc.b * 0.15, chip);
 		ao = 1.0 - groove * 0.55;
-		h = -groove * 0.9 + rivet * 0.6 - chip * 0.15;
+		h = -groove * 0.9 + rivet * 0.6 - chip * 0.25;
 		alb = mix(alb, vec3(0.75), rivet * 0.25);
 		if (debug_mode == 8) alb = dbg_base;
 		if (debug_mode == 9) alb = vec3(chip);
 		if (debug_mode == 10) alb = vec3(rivet);
 		if (debug_mode == 11) alb = vec3(groove);
-	} else if (s == 3) { alb = vec3(0.6, 0.6, 0.62) * (0.85 + nz.g * 0.25); met = 1.0; rou = 0.25 + nz.b * 0.2 + wear * 0.1; }
+	} else if (s == 3) { float br = texture(noise_tex, vec2(dot(pp, vec2(0.7, 0.7)) * 0.4, dot(pp, vec2(-0.7, 0.7)) * 9.0)).g; alb = vec3(0.52, 0.52, 0.54) * (0.82 + nz.g * 0.2 + br * 0.1); met = 1.0; rou = 0.34 + br * 0.14 + nz.b * 0.12 + wear * 0.1; }
 	else if (s == 4) { alb = vec3(0.05, 0.05, 0.053); met = 0.2; rou = 0.8; }
 	else if (s == 5) { alb = vec3(0.015, 0.02, 0.025); met = 1.0; rou = 0.06; }
 	else if (s == 6) { alb = vec3(0.86, 0.84, 0.78) * (0.92 + nz.g * 0.1); met = 0.0; rou = 0.28 + nf.b * 0.2; }

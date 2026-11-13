@@ -766,3 +766,7 @@ func dispose() -> void:
 	if is_instance_valid(model.root): model.root.queue_free()
 	for o in [cable, hook_head, barrier_mesh]:
 		if o and is_instance_valid(o): o.queue_free()
+	# quebra ciclos de referência (carcaça ↔ armas ↔ alvo), senão nada disso é liberado
+	for k in weapons:
+		var wp = weapons[k]; wp.mech = null; wp.queue.clear()
+	weapons.clear(); target = null; last_dmg_from = null; world = null

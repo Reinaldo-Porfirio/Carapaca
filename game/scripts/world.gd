@@ -237,4 +237,5 @@ func split(p: Dictionary) -> void:
 
 func dispose() -> void:
 	for m in mechs: m.dispose()
+	mechs.clear(); projs.clear()
 	queue_free()

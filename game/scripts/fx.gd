@@ -53,7 +53,7 @@ func setup() -> void:
 	_beam_mesh = _xform_mesh(bc, Transform3D(Basis(Vector3.RIGHT, PI / 2), Vector3(0, 0, 0.5)))
 	for i in 16: beams.append(_pool_item(_beam_mesh, false))
 	var rm := Geo.N.new("r"); rm.slots = { "x": 0 }; rm.put("x", Geo.ring(0.86, 1.0, 40))
-	var ring_mesh: Mesh = rm.bake(StandardMaterial3D.new()).get_child(0).mesh
+	var rn := rm.bake(StandardMaterial3D.new()); var ring_mesh: Mesh = rn.get_child(0).mesh; rn.free()
 	for i in 10: rings.append(_pool_item(ring_mesh, false))
 	var sp := SphereMesh.new(); sp.radius = 1; sp.height = 2; sp.radial_segments = 24; sp.rings = 12
 	for i in 4: orbs.append(_pool_item(sp, true))

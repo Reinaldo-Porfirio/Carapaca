@@ -33,6 +33,7 @@ var clamped := false
 var t := 0.0
 var rng
 var n: Geo.N
+var floods: Array = []
 
 func build(arena_id: String, seed_v: int, opts := {}) -> Arena:
 	id = arena_id; def = D.ARENAS[id]; size = def.size
@@ -43,7 +44,7 @@ func build(arena_id: String, seed_v: int, opts := {}) -> Arena:
 	var sky_cfg := {}; var sun_col := Color.WHITE; var sun_i := 2.5; var amb := 1.0; var fog := [Color("#888888"), 0.002]; var gkind := 1; var wx = null; var line_col := Color("#c9a227")
 	match id:
 		"coliseu":
-			gkind = 0; sun_dir = Vector3(-0.35, 1, -0.5); sun_col = Color("#e6ecff"); sun_i = 2.2; amb = 0.7; fog = [Color("#0c1016"), 0.0035]
+			gkind = 0; sun_dir = Vector3(-0.35, 1, -0.5); sun_col = Color("#e6ecff"); sun_i = 1.5; amb = 0.45; fog = [Color("#0c1016"), 0.0035]
 			sky_cfg = { "top": Color("#05070d"), "hor": Color("#1c2638"), "bot": Color("#0a0d12"), "sun_col": Color("#8fa8d8"), "sun_pow": 400.0, "glow": 0.12, "stars": 1.2 }
 			_coliseu(R)
 		"doca":
@@ -53,10 +54,10 @@ func build(arena_id: String, seed_v: int, opts := {}) -> Arena:
 			env_mat.set_shader_parameter("wet", 1.0)
 			_doca(R)
 		"salar":
-			gkind = 2; sun_dir = Vector3(0.75, 0.3, -0.45); sun_col = Color("#ffd2a0"); sun_i = 3.0; amb = 1.1; fog = [Color("#d8c8b4"), 0.0028]; line_col = Color("#8a7a66")
+			gkind = 2; sun_dir = Vector3(0.75, 0.36, -0.45); sun_col = Color("#ffd2a0"); sun_i = 3.2; amb = 0.6; fog = [Color("#d8c8b4"), 0.0016]; line_col = Color("#8a7a66")
 			sky_cfg = { "top": Color("#4a78b0"), "hor": Color("#f0d2b0"), "bot": Color("#c9b9a0"), "sun_col": Color("#fff0d0"), "sun_pow": 500.0, "glow": 1.0 }
 			wx = { "n": 500, "vel": Vector3(14, -0.5, 4), "col": Color("#e8dcc8"), "size": 0.5, "alpha": 0.25, "sway": 2.0 }
-			exposure = 0.9
+			exposure = 0.7
 			_salar(R)
 		"fundicao":
 			circle = false; gkind = 3; heat = 1.0; sun_dir = Vector3(-0.3, 0.8, -0.4); sun_col = Color("#ff9a5a"); sun_i = 1.4; amb = 0.9; fog = [Color("#2a120a"), 0.008]
@@ -84,13 +85,16 @@ func build(arena_id: String, seed_v: int, opts := {}) -> Arena:
 	env.glow_enabled = true; env.glow_intensity = 0.55; env.glow_strength = 0.9; env.glow_bloom = 0.04; env.glow_hdr_threshold = 1.1; env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	env.fog_enabled = true; env.fog_light_color = fog[0]; env.fog_density = fog[1] * (3.0 if opts.get("fog", false) else 1.0); env.fog_sky_affect = 0.35; env.fog_aerial_perspective = 0.25
 	if id == "fundicao" or id == "doca": env.fog_height = 8.0; env.fog_height_density = 0.04
-	env.adjustment_enabled = true; env.adjustment_contrast = 1.06; env.adjustment_saturation = 0.95
+	env.adjustment_enabled = true; env.adjustment_contrast = 1.14 if id == "salar" else 1.06; env.adjustment_saturation = 1.04 if id == "salar" else 0.95
+	env.set_meta("vfog", { "coliseu": 0.003, "doca": 0.008, "salar": 0.0, "fundicao": 0.01, "boreal": 0.006 }.get(id, 0.0))
+	env.set_meta("vfog_col", fog[0].lerp(Color.WHITE, 0.5)); env.set_meta("ssr", id == "doca")
 	var we := WorldEnvironment.new(); we.environment = env; add_child(we)
 	Settings.apply_env(env)
 	sun = DirectionalLight3D.new(); sun.light_color = sun_col; sun.light_energy = sun_i; sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.directional_shadow_max_distance = 220.0; sun.shadow_bias = 0.08; sun.shadow_normal_bias = 2.6; sun.shadow_blur = 1.2
 	add_child(sun); sun.look_at_from_position(sun_dir * 100.0, Vector3.ZERO, Vector3.UP if absf(sun_dir.y) < 0.99 else Vector3.FORWARD)
 	Settings.apply_sun(sun)
+	_lights_extra(R)
 	if wx != null: _weather(wx)
 	spawn_p = Vector3(0, 0, -R * 0.62); spawn_e = Vector3(0, 0, R * 0.62)
 	dust = Color({ "coliseu": "#55585c", "doca": "#5a5c5e", "salar": "#e0d6c4", "fundicao": "#3a2a22", "boreal": "#e6eef4" }[id])
@@ -128,7 +132,8 @@ func _coliseu(R: float) -> void:
 			n.put("dark", Geo.bx(len + 1 + k, 12, 13, 0.3), Vector3(c * (R + 14 + k * 12), 24 + k * 11, s * (R + 14 + k * 12)), Vector3(0, ry, 0))
 			n.put("crowd", Geo.bx(len + k, 6.5, 0.4, 0.01), Vector3(c * (R + 7.6 + k * 12), 33.5 + k * 11, s * (R + 7.6 + k * 12)), Vector3(0, ry, 0))
 		if i % 2 == 0: n.put("lamp", Geo.bx(len * 0.6, 0.5, 0.4, 0.01), Vector3(c * (R + 0.4), 16.5, s * (R + 0.4)), Vector3(0, ry, 0))
-		if i % 4 == 1:
+		if i % 7 == 1:
+			floods.append(Vector3(c * (R + 50.4), 84, s * (R + 50.4)))
 			n.put("dark", Geo.bx(3, 86, 3, 0.2), Vector3(c * (R + 52), 43, s * (R + 52)))
 			n.put("lamp", Geo.bx(18, 8, 1, 0.1), Vector3(c * (R + 50.4), 84, s * (R + 50.4)), Vector3(0, ry, 0))
 			n.put("dark", Geo.bx(20, 10, 2, 0.2), Vector3(c * (R + 51.6), 84, s * (R + 51.6)), Vector3(0, ry, 0))
@@ -260,6 +265,18 @@ func _boreal(R: float) -> void:
 	for i in 18:
 		var a: float = i / 18.0 * TAU + rng.rr(-0.1, 0.1); var d: float = R + rng.rr(200, 420); var h: float = rng.rr(70, 170)
 		n.put("snowm", Geo.cone(h * rng.rr(0.8, 1.3), h, 6), Vector3(cos(a) * d, h / 2 - 6, sin(a) * d), Vector3(0, rng.rf() * 3, 0))
+
+## Holofotes, sonda de reflexo (metais refletem a própria arena) e ajustes de luz por tema.
+func _lights_extra(R: float) -> void:
+	for f in floods:
+		var sp := SpotLight3D.new(); sp.light_color = Color("#dfe8ff"); sp.light_energy = 5.0; sp.spot_range = 420.0; sp.spot_angle = 30.0; sp.spot_attenuation = 0.4; sp.spot_angle_attenuation = 1.6
+		sp.light_volumetric_fog_energy = 0.5; sp.shadow_enabled = false; add_child(sp)
+		var tgt: Vector3 = Vector3(-f.x, 0, -f.z).normalized() * R * 0.15
+		sp.look_at_from_position(f + Vector3(0, -2, 0) - Vector3(f.x, 0, f.z).normalized() * 3.0, tgt)
+	if Settings.quality >= 1:
+		var pr := ReflectionProbe.new(); pr.size = Vector3(R * 2 + 60, 140, R * 2 + 60); pr.position = Vector3(0, 12, 0); pr.origin_offset = Vector3(0, -6, 0)
+		pr.update_mode = ReflectionProbe.UPDATE_ONCE; pr.box_projection = false; pr.interior = false; pr.intensity = 0.9; pr.max_distance = R * 3.0
+		pr.ambient_mode = ReflectionProbe.AMBIENT_DISABLED; pr.mesh_lod_threshold = 4.0; add_child(pr)
 
 func _add_light(p: Vector3, c: Color, e: float, r: float) -> void:
 	if e <= 0: return

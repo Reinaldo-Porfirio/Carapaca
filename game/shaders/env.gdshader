@@ -38,23 +38,42 @@ void fragment() {
 		float axis = an.x > an.z ? wp.z : wp.x;
 		float rib = sin(axis * 6.2832 * 2.4);
 		h = (an.y > 0.7) ? 0.0 : rib;
-		float rust = smoothstep(0.62, 0.8, nf.g + low * 0.25);
-		alb = mix(base * (0.85 + nz.g * 0.2), vec3(0.32, 0.17, 0.1), rust * 0.85); met = mix(0.55, 0.3, rust); rou = mix(0.55, 0.9, rust);
-		alb = mix(alb, alb * 0.6, grime * 0.4);
+		// ferrugem: escorre de cima em filetes e se acumula embaixo (sem manchas de "oncinha")
+		float drip = texture(noise_tex, vec2(axis * 0.9, wp.y * 0.05 + 0.4)).g;
+		float rust = smoothstep(0.66, 0.86, drip * 0.55 + nz.g * 0.35 + low * 0.3 + nf.b * 0.08) * 0.65;
+		vec3 faded = mix(base, vec3(dot(base, vec3(0.33))), 0.25 * nz.r) * (0.88 + nz.g * 0.16);
+		alb = mix(faded, vec3(0.3, 0.18, 0.11) * (0.8 + nf.r * 0.3), rust); met = mix(0.5, 0.25, rust); rou = mix(0.5 + nf.b * 0.15, 0.88, rust);
+		alb = mix(alb, alb * 0.62, grime * 0.35 + low * 0.2);
 	}
 	else if (s == 14) { emi = lamp_col * 5.0; alb = vec3(1.0); }
 	else if (s == 15) { emi = vec3(1.0, 0.12, 0.06) * 4.0; alb = vec3(0.5, 0.05, 0.02); }
 	else if (s == 16) { // escória incandescente
-		float flow = texture(noise_tex, wp.xz * 0.05 + vec2(time_s * 0.01, time_s * 0.004)).r;
-		float crust = smoothstep(0.45, 0.72, texture(noise_tex, wp.xz * 0.13 - vec2(time_s * 0.006, 0.0)).g);
-		emi = mix(vec3(1.0, 0.3, 0.04) * (1.3 + flow * 2.2), vec3(0.05, 0.02, 0.01), crust); alb = vec3(0.1, 0.04, 0.02); rou = 0.6;
+		// placas de crosta escura separadas por rachaduras incandescentes que andam devagar
+		vec2 q = wp.xz + vec2(time_s * 0.35, time_s * 0.12);
+		float n1 = texture(noise_tex, q * 0.028).r; float n2 = texture(noise_tex, q * 0.07 + 0.5).g;
+		float r1 = 1.0 - abs(n1 * 2.0 - 1.0); float r2 = 1.0 - abs(n2 * 2.0 - 1.0);
+		float w1 = fwidth(r1) * 1.5; float w2 = fwidth(r2) * 1.5;
+		float c1 = smoothstep(0.82 - w1, 0.94 + w1, r1); float c2 = smoothstep(0.88 - w2, 0.96 + w2, r2) * 0.6;
+		float far = smoothstep(0.08, 0.3, w2); c1 = mix(c1, 0.3, far); c2 = mix(c2, 0.2, far);
+		float hot = smoothstep(0.55, 0.8, texture(noise_tex, q * 0.02).b);
+		float glw = clamp(max(c1, c2) + hot * 0.35, 0.0, 1.0);
+		emi = vec3(1.0, 0.28, 0.04) * (glw * 3.2 + 0.1) + vec3(1.0, 0.6, 0.2) * c1 * 1.2;
+		alb = vec3(0.07, 0.05, 0.045) * (0.8 + nf.g * 0.4); rou = 0.85 - glw * 0.4; h = (1.0 - glw) * 0.6 + nf.b * 0.4;
 	}
 	else if (s == 17) { emi = vec3(1.0, 0.82, 0.55) * 2.6 * (0.6 + hash12(floor(pp * 0.8)) * 0.6); alb = vec3(0.4); }
 	else if (s == 18) { emi = vec3(1.0, 0.62, 0.3) * 6.0; alb = vec3(1.0); }
-	else if (s == 19) { // torcida: pontos de luz
-		vec2 g = floor(pp * vec2(1.4, 1.1)); float on = step(0.6, hash12(g)) * (0.5 + 0.5 * nf.g); float c = hash12(g + 3.0);
-		vec3 col = c < 0.3 ? vec3(1.0, 0.86, 0.66) : (c < 0.6 ? vec3(1.0) : (c < 0.8 ? vec3(0.66, 0.82, 1.0) : vec3(1.0, 0.47, 0.31)));
-		emi = col * on * 1.6 * (0.7 + 0.3 * sin(time_s * 2.0 + c * 30.0)); alb = vec3(0.03);
+	else if (s == 19) { // torcida: silhuetas sentadas na penumbra, com raros flashes; vira média de cor de longe (sem chuvisco)
+		vec2 cc = pp * vec2(1.5, 1.2); vec2 g = floor(cc); vec2 f = fract(cc);
+		float fw = max(fwidth(cc.x), fwidth(cc.y)); float near = 1.0 - smoothstep(0.25, 0.9, fw);
+		float c = hash12(g + 3.0); float pres = step(0.22, hash12(g));
+		vec3 cloth = c < 0.25 ? vec3(0.32, 0.1, 0.08) : (c < 0.5 ? vec3(0.1, 0.14, 0.24) : (c < 0.75 ? vec3(0.22, 0.22, 0.2) : vec3(0.4, 0.33, 0.12)));
+		float body = smoothstep(0.08, 0.22, f.x) * smoothstep(0.92, 0.78, f.x) * smoothstep(0.98, 0.55, f.y);
+		float head = 1.0 - smoothstep(0.12, 0.17, length((f - vec2(0.5, 0.78)) * vec2(1.0, 1.3)));
+		float fig = clamp(body * step(f.y, 0.6) + head, 0.0, 1.0) * pres;
+		vec3 avg = mix(vec3(0.05, 0.05, 0.055), vec3(0.2, 0.16, 0.13), 0.45);
+		alb = mix(avg, mix(vec3(0.04, 0.04, 0.045), cloth * (0.7 + 0.3 * nf.g), fig), near);
+		float fl = step(0.992, hash12(g + floor(time_s * 0.8 + c * 13.0)));
+		emi = vec3(1.0, 0.96, 0.9) * (fl * near * 3.0 + 0.04 * (1.0 - near)); rou = 0.95;
 	}
 	else if (s == 20) { alb = vec3(0.86, 0.9, 0.94) * (0.9 + nf.g * 0.12); rou = 0.75; h = nf.b * 0.4; }
 	else if (s == 21) { alb = vec3(0.55, 0.75, 0.86) * (0.8 + nz.g * 0.3); met = 0.1; rou = 0.08 + nf.b * 0.12; }

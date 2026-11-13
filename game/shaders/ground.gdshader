@@ -42,14 +42,14 @@ void fragment() {
 		float ca = abs(nm.r - 0.5) * (1.0 + nz.g); float fc = fwidth(ca);
 		float crack = (1.0 - smoothstep(0.0, 0.012 + fc, ca)) * min(1.0, 0.012 / (0.012 + fc * 2.0));
 		alb *= 1.0 - crack * 0.5; alb = mix(alb, alb * vec3(0.6, 0.58, 0.55), smoothstep(0.5, 0.9, nz.r) * 0.6);
-		float pud = smoothstep(0.52, 0.6, nz.g + nf.b * 0.06);
-		rou = mix(0.82 + nf.b * 0.15, 0.03, pud); alb *= 1.0 - pud * 0.45; met = pud * 0.1;
+		float pud = smoothstep(0.62, 0.68, nz.g * 0.7 + nm.r * 0.3 + nf.b * 0.04) * 0.9;
+		rou = mix(0.82 + nf.b * 0.15, 0.06, pud); alb *= 1.0 - pud * 0.3; met = pud * 0.1;
 		alb *= 1.0 - groove * 0.3;
 		h = -groove - crack * 0.5 + nf.b * 0.3 * (1.0 - pud);
 	} else if (kind == 2) {
 		float ve = voro_edge(p / 5.5 + nz.rg * 0.6);
 		float fv = fwidth(ve); float crack = (1.0 - smoothstep(0.015, 0.05 + fv, ve)) * min(1.0, 0.035 / (0.035 + fv));
-		alb = vec3(0.86, 0.83, 0.76) * (0.9 + nm.g * 0.12); alb = mix(alb, vec3(0.62, 0.55, 0.45), smoothstep(0.45, 0.9, nz.r) * 0.35);
+		alb = vec3(0.74, 0.71, 0.65) * (0.9 + nm.g * 0.12); alb = mix(alb, vec3(0.62, 0.55, 0.45), smoothstep(0.45, 0.9, nz.r) * 0.35);
 		alb = mix(alb, vec3(0.5, 0.42, 0.34), crack * 0.7); rou = 0.88; h = crack * 0.8 + nf.b * 0.25 + smoothstep(0.0, 0.2, ve) * 0.3;
 	} else if (kind == 3) {
 		alb = vec3(0.13, 0.11, 0.1) * (0.7 + nm.g * 0.6); alb = mix(alb, vec3(0.03, 0.025, 0.02), smoothstep(0.4, 0.8, nz.r) * 0.7);

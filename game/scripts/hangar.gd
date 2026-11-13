@@ -15,17 +15,19 @@ var t_shift := 0.0
 var idle := 0.0
 var swing := 0.0
 var dragging := false
+var env: Environment
 
 func setup() -> void:
-	var env := Environment.new()
+	env = Environment.new()
 	env.background_mode = Environment.BG_COLOR; env.background_color = Color("#0b0c0d")
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; env.ambient_light_color = Color("#5a6470"); env.ambient_light_energy = 0.45
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; env.ambient_light_color = Color("#646a72"); env.ambient_light_energy = 0.32
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX; env.tonemap_exposure = 1.15
 	env.glow_enabled = true; env.glow_intensity = 0.5; env.glow_hdr_threshold = 1.2; env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	env.fog_enabled = true; env.fog_light_color = Color("#0b0c0d"); env.fog_density = 0.008
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
+	env.adjustment_enabled = true; env.adjustment_contrast = 1.08
+	env.set_meta("vfog", 0.006); env.set_meta("vfog_col", Color("#8a8a8a"))
 	Settings.apply_env(env)
-	var we := WorldEnvironment.new(); we.environment = env; add_child(we)
 	var mat := ShaderMaterial.new(); mat.shader = Arena.env_shader; mat.set_shader_parameter("noise_tex", Mats.noise); mat.set_shader_parameter("lamp_col", Color("#fff2dc"))
 	var n := Geo.N.new("hangar"); n.slots = Arena.ENV_SLOTS; n.div = 32.0
 	n.put("dark", Geo.bx(160, 1, 160, 0.05), Vector3(0, -0.5, 0))
@@ -41,13 +43,15 @@ func setup() -> void:
 		n.put("k%d" % (3 if s > 0 else 1), Geo.bx(13, 5.3, 5.2, 0.12), Vector3(s * 34, 2.65, -6), Vector3(0, s * 0.3, 0))
 	n.put("stl", Geo.bx(34, 1.6, 2, 0.1), Vector3(0, 27, -12)); n.put("lamp", Geo.bx(12, 0.3, 1.2, 0.02), Vector3(0, 25.9, -12))
 	add_child(n.bake(mat))
-	var key := DirectionalLight3D.new(); key.light_color = Color("#fff0dc"); key.light_energy = 1.7; key.shadow_enabled = true; key.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL; key.directional_shadow_max_distance = 80; key.shadow_bias = 0.06; key.shadow_normal_bias = 2.0
+	var key := DirectionalLight3D.new(); key.light_color = Color("#fff0dc"); key.light_energy = 1.1; key.shadow_enabled = true; key.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL; key.directional_shadow_max_distance = 80; key.shadow_bias = 0.06; key.shadow_normal_bias = 2.0
 	add_child(key); key.look_at_from_position(Vector3(14, 30, 22), Vector3.ZERO)
-	var rim := DirectionalLight3D.new(); rim.light_color = Color("#f2a22c"); rim.light_energy = 0.45; add_child(rim); rim.look_at_from_position(Vector3(-20, 12, -20), Vector3.ZERO)
-	var fill := DirectionalLight3D.new(); fill.light_color = Color("#6f9ad8"); fill.light_energy = 0.5; add_child(fill); fill.look_at_from_position(Vector3(-16, 8, 20), Vector3.ZERO)
-	var spot := SpotLight3D.new(); spot.light_color = Color("#fff2dc"); spot.light_energy = 2.2; spot.spot_range = 40; spot.spot_angle = 28; spot.shadow_enabled = false; add_child(spot); spot.look_at_from_position(Vector3(0, 26, -12), Vector3(0, 0, 0))
+	var rim := DirectionalLight3D.new(); rim.light_color = Color("#f2a22c"); rim.light_energy = 0.5; add_child(rim); rim.look_at_from_position(Vector3(-20, 12, -20), Vector3.ZERO)
+	var fill := DirectionalLight3D.new(); fill.light_color = Color("#8796ad"); fill.light_energy = 0.3; add_child(fill); fill.look_at_from_position(Vector3(-16, 8, 20), Vector3.ZERO)
+	var spot := SpotLight3D.new(); spot.light_color = Color("#ffeed6"); spot.light_energy = 5.0; spot.spot_range = 48; spot.spot_angle = 26; spot.spot_angle_attenuation = 1.4; spot.shadow_enabled = true; spot.shadow_bias = 0.04; spot.light_volumetric_fog_energy = 1.2; add_child(spot)
+	var probe := ReflectionProbe.new(); probe.size = Vector3(90, 50, 70); probe.position = Vector3(0, 12, -2); probe.interior = true; probe.box_projection = true; probe.update_mode = ReflectionProbe.UPDATE_ONCE; probe.intensity = 0.8; add_child(probe); spot.look_at_from_position(Vector3(0, 26, -12), Vector3(0, 0, 0))
 	pivot = Node3D.new(); add_child(pivot)
-	cam = Camera3D.new(); cam.fov = 32; cam.near = 0.5; cam.far = 400; add_child(cam)
+	# ambiente na própria câmera: não disputa com o WorldEnvironment da arena durante as lutas
+	cam = Camera3D.new(); cam.fov = 32; cam.near = 0.5; cam.far = 400; cam.environment = env; add_child(cam)
 
 func clear() -> void:
 	if model: model.root.queue_free(); model = null

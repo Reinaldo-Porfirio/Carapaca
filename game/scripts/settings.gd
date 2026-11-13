@@ -17,12 +17,24 @@ static func apply_env(env: Environment) -> void:
 	env.ssil_intensity = 0.7
 	env.glow_enabled = quality >= 1
 	env.sdfgi_enabled = false
-	env.volumetric_fog_enabled = false
+	# névoa volumétrica (raios de luz) só no Alto e no Forward+; a densidade vem de cada cena (meta "vfog")
+	var vd: float = env.get_meta("vfog", 0.0)
+	env.volumetric_fog_enabled = quality >= 2 and not c and vd > 0.0
+	if env.volumetric_fog_enabled:
+		env.volumetric_fog_density = vd; env.volumetric_fog_albedo = env.get_meta("vfog_col", Color(0.8, 0.8, 0.8))
+		env.volumetric_fog_length = 140.0; env.volumetric_fog_detail_spread = 2.0; env.volumetric_fog_gi_inject = 0.2
+		env.volumetric_fog_anisotropy = 0.45; env.volumetric_fog_sky_affect = 0.0
+	env.ssr_enabled = quality >= 2 and not c and env.get_meta("ssr", false)
+	env.ssr_max_steps = 48; env.ssr_fade_in = 0.15; env.ssr_fade_out = 2.0; env.ssr_depth_tolerance = 0.4
 
 static func apply_sun(sun: DirectionalLight3D) -> void:
 	sun.shadow_enabled = quality >= 1 or compat()
-	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if quality >= 1 else DirectionalLight3D.SHADOW_ORTHOGONAL
-	sun.directional_shadow_max_distance = 220.0 if quality >= 2 else 160.0
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if quality >= 2 else (DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if quality >= 1 else DirectionalLight3D.SHADOW_ORTHOGONAL)
+	sun.directional_shadow_max_distance = 240.0 if quality >= 2 else 160.0
+	# cascatas: a primeira bem curta para sombras nítidas nas carcaças perto da câmera
+	sun.directional_shadow_split_1 = 0.06; sun.directional_shadow_split_2 = 0.18; sun.directional_shadow_split_3 = 0.45
+	sun.directional_shadow_blend_splits = quality >= 2
+	sun.shadow_normal_bias = 1.6 if quality >= 2 else 2.6
 
 static func apply_viewport(vp: Viewport) -> void:
 	var c := compat()

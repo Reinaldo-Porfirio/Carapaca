@@ -322,7 +322,7 @@ func scr_menu(_a) -> void:
 		["GARAGEM", "%s · %s" % [s.build.name, "pronta para combate" if st.valid else "montagem irregular"], func(): go("garage"), not st.valid],
 		["LOJA", "Catálogo classe %s liberado" % D.TIERCLS[tier], func(): go("shop"), false],
 		["OPÇÕES", "Áudio, mira, gráficos, controles", func(): go("options"), false]]
-	if OS.get_name() != "Web": items.append(["SAIR", "Fechar o jogo", func(): get_tree().quit(), false])
+	if OS.get_name() != "Web": items.append(["SAIR", "Fechar o jogo", func(): app.shutdown(); get_tree().quit(), false])
 	for it in items:
 		if it == null: v.add_child(sep_line()); continue
 		var row := Row.new(it[2]); var c := vb(0)

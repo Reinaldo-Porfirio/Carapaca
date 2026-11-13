@@ -34,6 +34,7 @@ func _ready() -> void:
 
 func apply_quality() -> void:
 	Settings.apply_viewport(get_viewport())
+	if hangar: Settings.apply_env(hangar.env)
 	if OS.get_name() == "Web": get_viewport().scaling_3d_scale = 1.0 if Settings.quality >= 2 else (0.85 if Settings.quality == 1 else 0.7)
 
 func _input(e: InputEvent) -> void:
@@ -58,6 +59,14 @@ func _unhandled_input(e: InputEvent) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and match_node != null: pause()
+	if what == NOTIFICATION_WM_CLOSE_REQUEST: shutdown()
+
+## Desmonta a luta antes de sair (fechar a janela no meio do combate não pode derrubar o jogo).
+func shutdown() -> void:
+	if match_node != null: match_node.dispose(); match_node = null
+	# recursos criados em tempo de execução guardados em variáveis estáticas precisam ser soltos
+	# antes do servidor de renderização encerrar (senão a versão exportada cai ao fechar)
+	FX._sc_shader = null; Mats._flame_mesh = null; Mats.noise = null; Mats.decal_tex = null
 
 func _process(dt: float) -> void:
 	dt = minf(dt, 0.05)
@@ -172,4 +181,6 @@ func _run_shots() -> void:
 		for i in int(float(args.get("secs", 9)) * 30): m.step(1.0 / 30.0)
 		m.paused = true
 		await shoot.call("g_fight_" + str(args.get("arena", rv.arena)))
+	shutdown()
+	for i in 5: await get_tree().process_frame
 	get_tree().quit()
