@@ -1,2 +1,5 @@
-node_modules/
-dist/dev_view.html
+web-v1/node_modules/
+web-v1/dist/dev_view.html
+game/.godot/
+build/
+*.tmp
