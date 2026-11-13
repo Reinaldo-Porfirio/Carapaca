@@ -18,7 +18,7 @@ const LIST := [
 	["hb_bastiao", "HB"], ["hb_fortaleza", "HB"], ["hb_assalto", "HB"], ["hb_haubitze", "HB"], ["hb_panzer", "HB"], ["hb_inspektor", "HB"],
 	["tsk_gaviao", "TSK"], ["tsk_duelista", "TSK"], ["tsk_andorinha", "TSK"], ["tsk_garca", "TSK"], ["tsk_kitsune", "TSK"], ["tsk_fenix", "TSK"],
 	["mrs_pastor", "MRS"], ["mrs_enxame", "MRS"], ["mrs_vigia", "MRS"], ["mrs_mula", "MRS"], ["mrs_lince", "MRS"], ["mrs_atendimento", "MRS"],
-	["nle_aranha", "NLE"], ["nle_escudeiro", "NLE"], ["nle_vindkraft", "NLE"], ["nle_isbryter", "NLE"], ["nle_mariposa", "NLE"], ["nle_raiz", "NLE"],
+	["nle_aranha", "NLE"], ["nle_escudeiro", "NLE"], ["nle_torden", "NLE"], ["nle_isbryter", "NLE"], ["nle_mariposa", "NLE"], ["nle_raiz", "NLE"],
 	["suc_remendo", "SUC"], ["suc_rei", "SUC"], ["suc_cacamba", "SUC"], ["suc_ratazana", "SUC"], ["suc_guindasteiro", "SUC"], ["suc_roubada", "SUC"],
 ]
 
@@ -680,17 +680,80 @@ static func nle_escudeiro() -> Geo.N:
 	n.put("c", Geo.bx(1.4, 0.6, 0.6, 0.05), Vector3(0, 2.9, 2.2)); n.put("w", Geo.bx(1.0, 0.25, 0.05, 0.01), Vector3(0, 3.0, 2.52))
 	return n
 
-static func nle_vindkraft() -> Geo.N:
+## Arco elétrico em zigue-zague entre dois pontos (para mostrar descarga).
+static func arc(n: Geo.N, a: Vector3, b: Vector3, segs := 5, amp := 0.35, w := 0.07) -> void:
+	var prev := a
+	for i in range(1, segs + 1):
+		var t := float(i) / segs
+		var p := a.lerp(b, t)
+		if i < segs: p += Vector3(sin(i * 2.3) * amp, cos(i * 1.7) * amp * 0.6, sin(i * 3.1) * amp)
+		beam(n, "g", prev, p, w, w, 0.005); prev = p
+
+## Bobina de Tesla: base, isoladores de cerâmica, enrolamento, toroide e esfera de descarga.
+static func tesla(n: Geo.N, base: Vector3, h := 2.6, r := 0.32) -> Vector3:
+	n.put("c", Geo.cyl(r * 1.5, r * 1.7, 0.35, 12), base + Vector3(0, 0.18, 0))
+	for k in 4: n.put("cer", Geo.cyl(r * 1.25, r * 1.25, 0.14, 12), base + Vector3(0, 0.45 + k * 0.2, 0)); n.put("k", Geo.cyl(r * 0.8, r * 0.8, 0.07, 10), base + Vector3(0, 0.55 + k * 0.2, 0))
+	var c0 := base + Vector3(0, 1.25, 0)
+	n.put("d", Geo.cyl(r, r, h * 0.55, 14), c0 + Vector3(0, h * 0.275, 0))
+	for k in 9: n.put("b", Geo.tor(r + 0.03, 0.03, 4, 16), c0 + Vector3(0, 0.08 + k * h * 0.06, 0), Vector3(PI / 2, 0, 0))
+	var top := c0 + Vector3(0, h * 0.55 + 0.15, 0)
+	n.put("d", Geo.tor(r * 2.0, r * 0.55, 8, 22), top, Vector3(PI / 2, 0, 0))
+	n.put("g", Geo.sph(r * 0.7, 10, 8), top + Vector3(0, 0.12, 0))
+	return top
+
+## Torden: bípede de combate com bobinas de Tesla nos ombros e projetores de arco nos antebraços.
+static func nle_torden() -> Geo.N:
 	var n := Geo.N.new("c")
-	for s in [1.0, -1.0]: leg(n, Vector3(s * 0.9, 5.0, 0), Vector3(s * 1.0, 2.7, 0.4), Vector3(s * 1.0, 0.4, 0), 0.75, 0.62); n.put("k", Geo.bx(1.0, 0.35, 1.8, 0.05), Vector3(s * 1.0, 0.18, 0.25))
-	n.put("a", Geo.prism([[-1.0, 5.0], [1.0, 5.0], [1.2, 7.4], [-1.1, 7.6]], 2.4, 0.12)); n.put("c", Geo.bx(1.2, 0.8, 0.9, 0.06), Vector3(0, 8.0, 0.4)); n.put("g", Geo.bx(0.8, 0.12, 0.05, 0.01), Vector3(0, 8.05, 0.86))
-	Geo.rod(n, "c", Vector3(0, 6.8, -1.0), Vector3(0, 9.2, -1.6), 0.35); n.put("cer", Geo.cyl_z(0.55, 0.6, 2.0, 14), Vector3(0, 9.5, -1.4)); n.put("d", Geo.cone(0.55, 0.9, 14), Vector3(0, 9.5, -2.85), Vector3(-PI / 2, 0, 0))
-	for k in 3: n.put("cer", Geo.prism([[0.0, 0.3], [5.6, 0.12], [5.8, -0.05], [0.0, -0.3]], 0.12, 0.02, "z"), Vector3(0, 9.5, -2.5), Vector3(0, 0, k * TAU / 3 + 0.4))
 	for s in [1.0, -1.0]:
-		var sh := Vector3(s * 1.5, 7.0, 0); var el := Vector3(s * 1.8, 5.6, 0.6)
-		joint(n, sh, 0.4); beam(n, "a", sh, el, 0.5, 0.55); beam(n, "c", el, el + Vector3(0, -0.4, 1.4), 0.45, 0.5)
-		for k in 4: n.put("d", Geo.tor(0.3 - k * 0.04, 0.06, 5, 12), el + Vector3(0, -0.4 + k * 0.32, 1.6), Vector3(PI / 2, 0, 0))
-		n.put("g", Geo.sph(0.2, 8, 6), el + Vector3(0, 0.95, 1.6))
+		var hip := Vector3(s * 0.95, 5.0, 0); var knee := Vector3(s * 1.05, 2.7, 0.45); var ank := Vector3(s * 1.05, 0.55, 0.0)
+		leg(n, hip, knee, ank, 0.85, 0.72, "a", "b")
+		n.put("a", Geo.bx(1.0, 0.8, 0.45, 0.06), knee + Vector3(0, 0.05, 0.42), Vector3(-0.3, 0, 0))
+		for k in 3: n.put("cer", Geo.cyl(0.46, 0.46, 0.1, 12), knee.lerp(ank, 0.3 + k * 0.18))
+		n.put("b", Geo.bx(1.2, 0.5, 2.0, 0.08), Vector3(s * 1.05, 0.25, 0.25)); n.put("a", Geo.bx(1.25, 0.25, 0.7, 0.04), Vector3(s * 1.05, 0.45, 1.05), Vector3(-0.2, 0, 0))
+		n.put("d", Geo.cone(0.14, 0.9, 8), Vector3(s * 1.05, 0.1, -1.0), Vector3(PI + 0.4, 0, 0)); n.put("g", Geo.sph(0.06, 6, 4), Vector3(s * 1.05, -0.3, -1.2))
+	n.put("c", Geo.bx(2.1, 0.9, 1.4, 0.1), Vector3(0, 5.2, 0))
+	# tronco blindado com janela do reator
+	n.put("a", Geo.prism([[-1.0, 5.4], [0.9, 5.4], [1.3, 6.4], [1.1, 7.8], [-0.9, 8.0], [-1.2, 6.7]], 2.5, 0.15))
+	n.put("c", Geo.bx(1.6, 0.5, 1.6, 0.06), Vector3(0, 5.55, 0))
+	n.put("b", Geo.prism([[0.95, 5.6], [1.35, 6.4], [1.2, 7.4], [0.9, 7.2]], 2.0, 0.06))
+	n.put("k", Geo.cyl_z(0.42, 0.46, 0.2, 16), Vector3(0, 6.75, 1.33)); n.put("g", Geo.cyl_z(0.3, 0.3, 0.22, 16), Vector3(0, 6.75, 1.35))
+	for k in 3: n.put("d", Geo.tor(0.46 + k * 0.04, 0.03, 4, 18), Vector3(0, 6.75, 1.36 + k * 0.02))
+	# cabeça com visor e aletas isolantes
+	n.put("d", Geo.cyl(0.26, 0.3, 0.3, 10), Vector3(0, 8.15, 0.1)); n.put("b", Geo.bx(0.85, 0.6, 0.8, 0.08), Vector3(0, 8.5, 0.3))
+	n.put("g", Geo.bx(0.62, 0.1, 0.05, 0.01), Vector3(0, 8.55, 0.71))
+	for s in [1.0, -1.0]:
+		for k in 3: n.put("cer", Geo.bx(0.06, 0.34, 0.5, 0.01), Vector3(s * (0.47 + k * 0.08), 8.55, 0.25))
+	# bobinas de Tesla nos ombros + braços com projetores de arco
+	var tops := []
+	for s in [1.0, -1.0]:
+		var sh := Vector3(s * 1.55, 7.45, -0.1)
+		n.put("a", Geo.bx(1.2, 0.9, 1.5, 0.1), sh + Vector3(s * 0.15, 0.1, 0)); n.put("b", Geo.bx(1.25, 0.15, 1.55, 0.02), sh + Vector3(s * 0.15, 0.6, 0))
+		tops.append(tesla(n, sh + Vector3(s * 0.25, 0.55, -0.2), 2.6, 0.32))
+		var el := Vector3(s * 2.0, 6.1, 0.35); var wr := Vector3(s * 2.05, 5.4, 2.0)
+		joint(n, sh + Vector3(0, -0.4, 0), 0.4); beam(n, "a", sh + Vector3(0, -0.4, 0), el, 0.52, 0.56); joint(n, el, 0.32)
+		n.put("c", Geo.cyl_z(0.58, 0.66, 1.9, 16), el.lerp(wr, 0.5), Vector3(-0.38, 0, 0))
+		for k in 8: n.put("b", Geo.tor(0.64, 0.045, 4, 18), el.lerp(wr, 0.12 + k * 0.1), Vector3(-0.38, 0, 0))
+		var tip := wr + Vector3(0, -0.1, 0.3)
+		for k in 2: n.put("cer", Geo.cyl_z(0.44 - k * 0.06, 0.48 - k * 0.06, 0.2, 14), tip + Vector3(0, -0.07 * k, 0.2 * k), Vector3(-0.38, 0, 0))
+		var forks := []
+		for k in 3:
+			var ang := k * TAU / 3 + PI / 2
+			var e0 := tip + Vector3(cos(ang) * 0.3, sin(ang) * 0.3, 0.3); var e1 := e0 + Vector3(cos(ang) * 0.12, sin(ang) * 0.12 - 0.35, 1.2)
+			beam(n, "d", e0, e1, 0.1, 0.1, 0.01); n.put("g", Geo.sph(0.12, 8, 6), e1); forks.append(e1)
+		arc(n, forks[0], forks[1], 3, 0.1, 0.05); arc(n, forks[1], forks[2], 3, 0.1, 0.05); arc(n, forks[2], forks[0], 3, 0.1, 0.05)
+		var cen: Vector3 = (forks[0] + forks[1] + forks[2]) / 3.0
+		arc(n, cen, cen + Vector3(s * 0.3, -0.6, 1.6), 4, 0.18, 0.05)
+	# arco entre as duas bobinas e descargas no ar
+	arc(n, tops[0] + Vector3(0, 0.2, 0), tops[1] + Vector3(0, 0.2, 0), 8, 0.35, 0.07)
+	arc(n, tops[0] + Vector3(0, 0.25, 0), tops[0] + Vector3(0.9, 1.5, -0.4), 4, 0.25, 0.05)
+	arc(n, tops[1] + Vector3(0, 0.25, 0), tops[1] + Vector3(-1.0, 1.3, 0.3), 4, 0.25, 0.05)
+	# banco de capacitores nas costas, com cabos para as bobinas
+	n.put("b", Geo.bx(2.2, 1.8, 0.9, 0.1), Vector3(0, 6.8, -1.45))
+	for k in 4:
+		var cp := Vector3(-0.75 + k * 0.5, 7.0, -2.05)
+		n.put("c", Geo.cyl(0.2, 0.2, 1.5, 12), cp); n.put("g", Geo.tor(0.21, 0.03, 4, 12), cp + Vector3(0, 0.3, 0), Vector3(PI / 2, 0, 0)); n.put("cer", Geo.cyl(0.22, 0.22, 0.12, 12), cp + Vector3(0, 0.8, 0))
+	for s in [1.0, -1.0]: beam(n, "k", Vector3(s * 0.9, 7.6, -1.6), Vector3(s * 1.7, 8.2, -0.5), 0.12, 0.12, 0.02)
+	Geo.decal(n, "mkNLE", Vector3(-1.2, 6.5, 1.08), Vector3(0, -0.35, 0), 1.0, 0.39)
 	return n
 
 static func nle_isbryter() -> Geo.N:

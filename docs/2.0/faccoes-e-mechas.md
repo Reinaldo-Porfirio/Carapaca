@@ -53,7 +53,7 @@ O campeão do Circuito é, de repente, o piloto mais cobiçado do continente.
 - **Quem são:** cooperativas de energia do norte, defensivas e teimosas. Não invadem, mas também não saem.
 - **Doutrina:** ancorar, aguentar e disparar energia de longe.
 - **Humor:** selos de "carbono neutro" em canhões de plasma e pedidos de desculpa pela interferência no rádio.
-- **Mechas:** Aranha (artilharia de seis patas que escala).
+- **Mechas:** Aranha (artilharia de seis patas que escala) e Torden (bípede de combate com bobinas de Tesla e arco em cadeia).
 - **Cores:** verde-água, grafite e brilho ciano.
 
 ### Os Sucateiros: Ferro-Velho
