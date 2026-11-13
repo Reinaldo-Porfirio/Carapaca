@@ -15,7 +15,7 @@ const SCALE := { "tsk_gaviao": 1.5, "tsk_andorinha": 1.6, "tsk_duelista": 1.2, "
 	"suc_ratazana": 1.7, "suc_guindasteiro": 1.3, "suc_rei": 1.5, "nle_mariposa": 1.4 }
 
 const LIST := [
-	["hb_bastiao", "HB"], ["hb_fortaleza", "HB"], ["hb_locomotiva", "HB"], ["hb_morser", "HB"], ["hb_sapador", "HB"], ["hb_inspektor", "HB"],
+	["hb_bastiao", "HB"], ["hb_fortaleza", "HB"], ["hb_assalto", "HB"], ["hb_morser", "HB"], ["hb_sapador", "HB"], ["hb_inspektor", "HB"],
 	["tsk_gaviao", "TSK"], ["tsk_duelista", "TSK"], ["tsk_andorinha", "TSK"], ["tsk_garca", "TSK"], ["tsk_kitsune", "TSK"], ["tsk_fenix", "TSK"],
 	["mrs_pastor", "MRS"], ["mrs_enxame", "MRS"], ["mrs_vigia", "MRS"], ["mrs_mula", "MRS"], ["mrs_lince", "MRS"], ["mrs_atendimento", "MRS"],
 	["nle_aranha", "NLE"], ["nle_escudeiro", "NLE"], ["nle_vindkraft", "NLE"], ["nle_isbryter", "NLE"], ["nle_mariposa", "NLE"], ["nle_raiz", "NLE"],
@@ -29,6 +29,7 @@ static func build(id: String) -> Node3D:
 	var mat := Mats.mech_material(PAINT[fac])
 	if id == "suc_roubada": return _roubada(mat)
 	if id == "hb_fortaleza": return _fortaleza_scene(mat)
+	if id == "hb_assalto": return _assalto_scene()
 	var n: Geo.N = Concepts.new().call(id)
 	var root := n.bake(mat)
 	root.scale = Vector3.ONE * float(SCALE.get(id, 1.0))
@@ -178,22 +179,71 @@ static func hb_fortaleza() -> Geo.N:
 	Geo.decal(n, "n2", Vector3(-11.0, 22.6, 18.0), Vector3(0, -PI / 2, 0), 3.0, 4.0)
 	return n
 
-static func hb_locomotiva() -> Geo.N:
+## Heavy Assault: bípede de assalto superblindado (~10 m). v = "M" (corpo a corpo) ou "I" (tiro).
+static func hb_heavy(v: String) -> Geo.N:
 	var n := Geo.N.new("c")
-	n.put("a", Geo.cyl_z(1.6, 1.6, 8.0, 18), Vector3(0, 4.3, 0.2)); n.put("c", Geo.cyl_z(1.72, 1.72, 0.6, 18), Vector3(0, 4.3, 4.3))
-	for z in [-2.2, 0.0, 2.2]: n.put("d", Geo.tor(1.62, 0.08, 5, 24), Vector3(0, 4.3, z))
-	n.put("hz", Geo.prism([[4.2, 1.0], [6.0, 0.9], [4.6, 3.2], [4.2, 3.4]], 3.6, 0.1))
-	n.put("g", Geo.cyl_z(0.4, 0.45, 0.3, 14), Vector3(0, 5.6, 4.7)); n.put("k", Geo.cyl(0.42, 0.58, 1.9, 12), Vector3(0, 6.5, 3.0))
-	n.put("b", Geo.bx(3.6, 2.8, 2.6, 0.12), Vector3(0, 5.2, -4.5)); n.put("w", Geo.bx(3.7, 0.7, 1.6, 0.03), Vector3(0, 5.9, -4.3))
+	# pernas curtas, grossas e afastadas
 	for s in [1.0, -1.0]:
-		for z in [-2.6, 2.6]:
-			leg(n, Vector3(s * 1.8, 3.6, z), Vector3(s * 2.8, 2.3, z + 0.6), Vector3(s * 2.8, 0.4, z), 0.9, 0.75)
-			n.put("k", Geo.bx(1.1, 0.4, 1.6, 0.06), Vector3(s * 2.8, 0.2, z + 0.2))
-		for z in [-1.0, 1.0]: n.put("d", Geo.cyl_x(1.05, 0.3, 16), Vector3(s * 1.55, 2.6, z))
-		beam(n, "c", Vector3(s * 1.75, 2.6, -1.0), Vector3(s * 1.75, 2.6, 1.0), 0.18, 0.18)
-	n.put("c", Geo.cyl(0.9, 1.0, 0.5, 14), Vector3(0, 6.1, -1.2)); n.put("a", Geo.bx(1.8, 0.9, 2.0, 0.08), Vector3(0, 6.7, -1.1))
-	for b in [-0.35, 0.35]: n.put("d", Geo.cyl_z(0.16, 0.18, 3.4, 10), Vector3(b, 6.75, 1.4))
-	Geo.decal(n, "n7", Vector3(1.83, 5.3, -4.0), Vector3(0, PI / 2, 0), 0.8, 1.0)
+		var hip := Vector3(s * 1.4, 4.3, 0); var knee := Vector3(s * 1.6, 2.4, 0.45); var ank := Vector3(s * 1.6, 0.8, 0.0)
+		n.put("d", Geo.cyl_x(0.62, 1.2, 12), hip); beam(n, "a", hip, knee, 1.45, 1.6, 0.16)
+		n.put("b", Geo.bx(1.6, 1.3, 0.3, 0.06), hip.lerp(knee, 0.5) + Vector3(0, 0, 0.85), Vector3(-0.15, 0, 0))
+		n.put("d", Geo.cyl_x(0.55, 1.3, 12), knee); n.put("a", Geo.sph(0.75, 10, 6, 0, TAU, 0, PI * 0.5), knee + Vector3(0, 0, 0.35), Vector3(1.4, 0, 0), [1.1, 1.0, 0.9])
+		beam(n, "c", knee, ank, 1.3, 1.4, 0.14)
+		n.put("a", Geo.bx(1.55, 1.7, 0.38, 0.08), knee.lerp(ank, 0.5) + Vector3(0, 0, 0.8), Vector3(0.12, 0, 0))
+		n.put("k", Geo.bx(1.75, 0.6, 2.6, 0.12), Vector3(s * 1.6, 0.3, 0.3)); n.put("a", Geo.bx(1.8, 0.35, 1.0, 0.08), Vector3(s * 1.6, 0.55, 1.35), Vector3(-0.25, 0, 0))
+		n.put("hz", Geo.bx(1.82, 0.2, 0.2, 0.02), Vector3(s * 1.6, 0.2, 1.62))
+		# saiote pesado
+		n.put("a", Geo.bx(1.4, 1.5, 0.3, 0.06), Vector3(s * 0.75, 3.95, 1.25), Vector3(0.22, 0, s * -0.05))
+		n.put("b", Geo.bx(0.3, 1.6, 1.8, 0.06), Vector3(s * 2.15, 4.0, 0.0), Vector3(0, 0, s * 0.18))
+	n.put("c", Geo.bx(2.6, 1.0, 1.8, 0.12), Vector3(0, 4.5, 0))
+	# tronco largo em barril
+	n.put("a", Geo.prism([[-1.3, 4.7], [1.2, 4.7], [1.75, 5.7], [1.55, 7.6], [-0.9, 8.3], [-1.7, 7.0]], 3.8, 0.2))
+	n.put("b", Geo.prism([[1.25, 5.0], [1.85, 5.8], [1.7, 7.3], [1.3, 7.1]], 3.0, 0.1))
+	for y in [5.55, 6.3]: n.put("c", Geo.bx(2.4, 0.08, 0.1, 0.01), Vector3(0, y, 1.82 - (y - 5.5) * 0.12))
+	Geo.bolts(n, "d", [Vector3(1.2, 7.0, 1.78), Vector3(-1.2, 7.0, 1.78), Vector3(1.3, 5.2, 1.6), Vector3(-1.3, 5.2, 1.6)], 0.09)
+	# cabeça afundada entre os ombros, com gola blindada
+	n.put("c", Geo.bx(2.3, 0.55, 0.9, 0.12), Vector3(0, 7.6, 1.25), Vector3(-0.25, 0, 0))
+	n.put("a", Geo.bx(1.05, 0.95, 1.1, 0.14), Vector3(0, 8.3, 1.15)); n.put("c", Geo.bx(1.15, 0.25, 1.15, 0.05), Vector3(0, 8.82, 1.1))
+	n.put("k", Geo.bx(0.85, 0.24, 0.1, 0.02), Vector3(0, 8.32, 1.71))
+	for x in [-0.25, 0.0, 0.25]: n.put("g", Geo.bx(0.14, 0.09, 0.05, 0.01), Vector3(x, 8.32, 1.77))
+	n.put("d", Geo.bx(0.5, 0.18, 0.12, 0.02), Vector3(0, 8.0, 1.72))
+	if v == "I":
+		n.put("c", Geo.bx(0.35, 0.35, 0.6, 0.04), Vector3(0.62, 8.95, 0.9)); n.put("g", Geo.cyl_z(0.1, 0.1, 0.04, 8), Vector3(0.62, 8.95, 1.22))
+		Geo.rod(n, "d", Vector3(-0.45, 8.9, 0.8), Vector3(-0.6, 10.0, 0.6), 0.04)
+	# ombreiras enormes em camadas
+	for s in [1.0, -1.0]:
+		var sp := Vector3(s * 2.35, 8.0, 0.0)
+		# ombreira angular: capuz de chapa grossa com aresta elevada e bordas em camadas
+		n.put("a", Geo.prism([[-0.9 * s, 0.45], [0.35 * s, 0.85], [1.25 * s, 0.25], [1.2 * s, -0.75], [-0.55 * s, -0.4]], 2.6, 0.14, "z"), sp)
+		n.put("b", Geo.bx(0.3, 0.3, 2.7, 0.04), sp + Vector3(s * 0.35, 0.9, 0), Vector3(0, 0, s * -0.4))
+		n.put("hz", Geo.bx(0.16, 0.95, 2.66, 0.02), sp + Vector3(s * 1.3, -0.25, 0), Vector3(0, 0, s * 0.05))
+		n.put("a", Geo.bx(1.6, 0.2, 2.3, 0.04), sp + Vector3(s * 0.7, -0.95, 0), Vector3(0, 0, s * -0.55))
+		n.put("c", Geo.bx(1.35, 0.18, 2.0, 0.04), sp + Vector3(s * 0.85, -1.32, 0), Vector3(0, 0, s * -0.6))
+		Geo.bolts(n, "d", [sp + Vector3(s * 0.9, 0.42, 1.0), sp + Vector3(s * 0.9, 0.42, -1.0), sp + Vector3(s * 0.9, 0.42, 0.0)], 0.08, "y")
+		# braços maciços
+		var sh := Vector3(s * 2.45, 7.3, 0.0); var el := Vector3(s * 2.75, 5.7, 0.35); var wr := Vector3(s * 2.75, 4.5, 1.25)
+		beam(n, "c", sh, el, 0.9, 1.0, 0.1); n.put("d", Geo.sph(0.55, 10, 8), el)
+		beam(n, "a", el, wr, 1.3, 1.45, 0.14); n.put("b", Geo.bx(1.4, 0.25, 1.3, 0.04), el.lerp(wr, 0.25) + Vector3(0, 0.0, 0.0), Vector3(-0.7, 0, 0))
+		var gun: bool = v == "I" and s < 0
+		if gun:
+			# antebraço com alojamento de arma (a arma em si vem na rodada de armas)
+			n.put("c", Geo.bx(1.0, 0.9, 2.2, 0.08), wr + Vector3(0, -0.15, 0.6)); n.put("hz", Geo.bx(1.02, 0.15, 0.4, 0.02), wr + Vector3(0, 0.3, 1.2))
+			for b in [-0.22, 0.22]: n.put("d", Geo.cyl_z(0.16, 0.18, 1.4, 10), wr + Vector3(b, -0.2, 2.2))
+			n.put("k", Geo.bx(0.5, 0.6, 0.8, 0.04), wr + Vector3(0, -0.75, 0.3))
+		else:
+			# manopla blindada
+			var big: float = 1.25 if v == "M" else 1.0
+			n.put("a", Geo.bx(1.25 * big, 1.15 * big, 1.25 * big, 0.12), wr + Vector3(0, -0.5, 0.35))
+			for k in 4: n.put("d", Geo.bx(0.24 * big, 0.3 * big, 0.5 * big, 0.04), wr + Vector3(-0.42 * big + k * 0.28 * big, -0.85 * big, 0.95 * big))
+			n.put("b", Geo.bx(1.3 * big, 0.3, 0.5 * big, 0.04), wr + Vector3(0, -0.05, 0.85 * big))
+	if v == "M":
+		n.put("c", Geo.bx(2.8, 1.6, 0.35, 0.08), Vector3(0, 6.2, 2.0), Vector3(-0.08, 0, 0)); n.put("hz", Geo.bx(2.85, 0.25, 0.37, 0.02), Vector3(0, 5.35, 2.05), Vector3(-0.08, 0, 0))
+	# motor nas costas com chaminés
+	n.put("c", Geo.bx(2.8, 2.6, 1.3, 0.15), Vector3(0, 7.0, -1.75)); Geo.vent(n, "k", Vector3(0, 6.8, -2.42), 2.0, 1.4, 4, 0.5, "z")
+	for s in [1.0, -1.0]:
+		Geo.rod(n, "k", Vector3(s * 0.9, 7.8, -2.0), Vector3(s * 1.1, 9.6, -2.6), 0.24); n.put("g", Geo.cyl(0.18, 0.18, 0.06, 10), Vector3(s * 1.1, 9.62, -2.6))
+	Geo.decal(n, "mkHB", Vector3(2.9, 8.35, 0.0), Vector3(0, PI / 2, -0.25), 1.2, 0.47)
+	Geo.decal(n, "n4" if v == "M" else "n6", Vector3(-1.6, 2.8, 1.22), Vector3(-0.12, 0, 0), 0.6, 0.8)
 	return n
 
 static func hb_morser() -> Geo.N:
@@ -628,4 +678,13 @@ static func _fortaleza_scene(mat: Material) -> Node3D:
 	for q in [[Vector3(-2.2, 4.4, 41.0), 0.1], [Vector3(2.4, 1.2, 46.5), -0.2], [Vector3(-3.0, 0.0, 52.0), 0.4]]:
 		var md: Dictionary = Builder.build_mech(pb); md.root.position = q[0]; md.root.rotation.y = q[1]; root.add_child(md.root)
 	var bas := hb_bastiao().bake(Mats.mech_material(PAINT.HB)); bas.position = Vector3(13.0, 0, 44.0); bas.rotation.y = -0.4; root.add_child(bas)
+	return root
+
+## Heavy Assault: variantes M (corpo a corpo, ocre) e I (tiro, vermelho-óxido) lado a lado.
+static func _assalto_scene() -> Node3D:
+	var root := Node3D.new()
+	var pm: Dictionary = PAINT.HB.duplicate()
+	var m := hb_heavy("M").bake(Mats.mech_material(pm)); m.position = Vector3(-4.4, 0, 0); m.rotation.y = 0.2; root.add_child(m)
+	var pi: Dictionary = PAINT.HB.duplicate(); pi.b = "#8c3a26"
+	var i := hb_heavy("I").bake(Mats.mech_material(pi)); i.position = Vector3(4.6, 0, -0.6); i.rotation.y = -0.15; root.add_child(i)
 	return root

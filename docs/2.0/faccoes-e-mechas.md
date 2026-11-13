@@ -31,7 +31,7 @@ O campeão do Circuito é, de repente, o piloto mais cobiçado do continente.
 - **Quem são:** siderurgia, ferrovias e artilharia; ordem acima de tudo. Pilotos são "operadores", missões são "ordens de serviço".
 - **Doutrina:** avançar devagar, sem recuar, atrás de muito aço.
 - **Humor:** tudo em três vias. Cobram multa por "danos ao patrimônio do Consórcio" de quem os ataca.
-- **Mechas:** Bastião (linha) e Fortaleza (chefe).
+- **Mechas:** Heavy Assault (assalto pesado, variantes HA-M e HA-I), Bastião (escudo-muralha) e Fortaleza (chefe).
 - **Cores:** cinza aço, ocre e faixas de advertência.
 
 ### Tsubame Kōki: a Revoada
@@ -71,6 +71,7 @@ Cada tipo **obriga o jogador a lutar diferente**. Não basta ter mais vida ou ma
 
 | Tipo | Facção | Porte | Regra única | Como vencer |
 |---|---|---|---|---|
+| **Heavy Assault** | Haldane-Bräck | 10 m, muito largo | **armadura pesada de assalto**: chapas grossas em camadas; HA-M luta corpo a corpo, HA-I usa armas de fogo | cercar e acertar o motor das costas; lento para virar |
 | **Bastião** | Haldane-Bräck | 10 m, muito pesado | **escudo-muralha frontal**: quase imune pela frente; avança sem recuar e empurra | flanquear e acertar costas, pernas e o canhão (fica exposto ao disparar) |
 | **Fortaleza** | Haldane-Bräck | 70 m, chefe | **cidade blindada de oito pernas**: leva tripulação, desembarca Carcaças e Bastiões pela rampa da proa, torres triplas, silos de mísseis, canhões de bordada, antiaéreas e morteiros | desmontar por partes; cada torre destruída muda o padrão de ataque |
 | **Gavião** | Tsubame Kōki | asa de 10 m | **voo pairado**: domina o ar, metralha em mergulho e volta para cima | míssil guiado e munição de impacto; derrubado, fica lento e frágil no chão |
