@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 1.2 — encaixe das peças
+- **Encaixe automático**: ao montar a carcaça, cada peça mede o espaço que tem naquele tronco e se afasta do que atravessaria. As unidades dorsais saem de cima da cabeça e do ombro e ganham um suporte (viga, pilone ou trilho) quando precisam ser deslocadas, nas poses recolhida e de combate.
+- O radiador no topo do tronco vai para trás da cabeça; o propulsor recua com um duto quando bateria no gerador; os módulos traseiros descem abaixo do gerador; a antena e a mira mudam de lugar quando uma dorsal ocupa o espaço.
+- O cano das dorsais não mira mais para baixo a ponto de entrar no braço.
+- Verificado em 735 montagens (7 troncos × 15 opções dorsais × 7 cabeças, com braços, ombros, utilitários e módulos em rodízio) nas duas poses.
+
 ## 1.1 — polimento visual
 - **Iluminação**: o ambiente de cada arena (céu, névoa, luz ambiente) passa a valer nas lutas — antes o do hangar sobrepunha tudo e o céu ficava preto.
 - Holofotes de estádio no Coliseu, sonda de reflexo em todas as arenas (metais refletem o cenário), sombras em 4 cascatas e névoa volumétrica no gráfico Alto, reflexos de tela no chão molhado da Doca.

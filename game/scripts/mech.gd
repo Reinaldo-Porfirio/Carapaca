@@ -731,7 +731,7 @@ func update_model(dt: float) -> void:
 		var n = M.wn.get(slot)
 		if n == null or n.pv == null or n.fixed: continue
 		var act: bool = fire_t[slot] < 2.2 or I.fire[slot] or (weapons.has(slot) and weapons[slot].chg > 0)
-		n.pv.rotation.x = lerpf(n.pv.rotation.x, -clampf(pitch, -0.5, 0.9) if act else -(n.stow if n.stow else 0.22), minf(1.0, (10.0 if act else 3.0) * dt))
+		n.pv.rotation.x = lerpf(n.pv.rotation.x, -clampf(pitch, -0.3, 0.9) if act else -(n.stow if n.stow else 0.22), minf(1.0, (10.0 if act else 3.0) * dt))
 	for s in M.spin:
 		var wp = weapons.get(s.key)
 		s.g.rotation.z += (wp.spin_v if wp else 0.0) * 40 * dt

@@ -4,17 +4,44 @@ var out := ""
 var frames := 0
 func setup(args: Dictionary) -> void:
 	out = args.get("out", "/tmp/view.png")
+	if args.get("mode", "") == "timing":
+		var t0 := Time.get_ticks_usec(); var cnt := 0
+		for r in D.RIVALS:
+			var md: Dictionary = Builder.build_mech(r.build); md.root.free(); cnt += 1
+		printerr("ms por carcaça: ", (Time.get_ticks_usec() - t0) / 1000.0 / cnt); get_tree().quit(); return
 	if args.get("mode", "") == "dump":
 		# exporta triângulos de cada peça (para análise de faces sobrepostas/invertidas)
 		var f := FileAccess.open(out, FileAccess.WRITE)
 		var items := []
-		if args.get("what", "") == "mechs":
+		if args.get("what", "") == "assembly":
+			# combinações: cada tronco × cada unidade dorsal × cabeças/braços/ombros/utilitários em rodízio
+			var by := {}
+			for pp in D.PARTS: by[pp.slot] = by.get(pp.slot, []) + [pp.id]
+			var base: Dictionary = D.STARTER_BUILD.duplicate(true)
+			var i := 0
+			for c in by.core:
+				for bk in by.back + [null]:
+					for h in by.head:
+						var b := base.duplicate(true); b.core = c; b.head = h; b.backR = bk; b.backL = bk
+						b.arms = by.arms[i % by.arms.size()]; b.shoulder = (by.shoulder + [null])[i % (by.shoulder.size() + 1)]
+						b.util = by.util[i % by.util.size()]; b.handR = by.hand[i % by.hand.size()]; b.handL = by.hand[(i * 7 + 3) % by.hand.size()]
+						b.mods = [by.mod[i % by.mod.size()], by.mod[(i * 5 + 2) % by.mod.size()]]
+						items.append({ "id": "%s|%s|%s|%s|%s|%s|%s" % [c, str(bk), h, b.arms, str(b.shoulder), b.util, ",".join(b.mods)], "b": b }); i += 1
+		elif args.get("what", "") == "mechs":
 			items.append({ "id": "starter", "b": D.STARTER_BUILD })
 			for r in D.RIVALS: items.append({ "id": "rv%d" % r.rank, "b": r.build })
 		else:
 			for p in D.PARTS: items.append({ "id": p.id })
 		for p in items:
-			var g: Node3D = Builder.build_mech(p.b).root if p.has("b") else Builder.build_part_preview(p.id, D.STARTER_BUILD.paint)
+			var g: Node3D
+			if p.has("b"):
+				var md: Dictionary = Builder.build_mech(p.b); g = md.root
+				# pose das unidades dorsais: recolhida (repouso) ou apontada para frente (combate)
+				for key in ["backR", "backL"]:
+					var wn = md.wn.get(key)
+					if wn != null and wn.pv != null and not wn.fixed:
+						wn.pv.rotation.x = 0.0 if args.get("pose", "stow") == "act" else -(wn.stow if wn.stow else 0.22)
+			else: g = Builder.build_part_preview(p.id, D.STARTER_BUILD.paint)
 			add_child(g)
 			var k := 0
 			for mi in g.find_children("*", "MeshInstance3D", true, false):
@@ -53,13 +80,25 @@ func setup(args: Dictionary) -> void:
 	var fm := StandardMaterial3D.new(); fm.albedo_color = Color("#55585c"); fm.roughness = 0.9; fl.material_override = fm; add_child(fl)
 	var list := []
 	var from := int(args.get("from", 0)); var n := int(args.get("n", 5)); var ang := float(args.get("a", 0.6))
-	if args.get("mode", "mechs") == "mechs":
+	if args.get("mode", "mechs") == "mechs" or args.get("mode", "") == "custom":
 		var all := [D.STARTER_BUILD]
 		for r in D.RIVALS: all.append(r.build)
 		list = all.slice(from, from + n)
+		if args.get("mode", "") == "custom":
+			# --set=core:x;backR:y;... sobre a montagem inicial (vários mechas separados por "/")
+			list = []
+			for spec in String(args.get("set", "")).split("/"):
+				var b: Dictionary = D.STARTER_BUILD.duplicate(true)
+				for kv in spec.split(";"):
+					var pr := kv.split(":")
+					if pr.size() == 2: b[pr[0]] = (Array(pr[1].split(",")) if pr[0] == "mods" else (null if pr[1] == "-" else pr[1]))
+				list.append(b)
 		for i in list.size():
-			var m := Builder.build_mech(list[i]); m.mat.set_shader_parameter("debug_mode", int(args.get("dbg", 0))); m.root.position.x = (i - (list.size() - 1) / 2.0) * 11; m.root.rotation.y = ang; add_child(m.root)
-		var cam := Camera3D.new(); cam.fov = 30; cam.near = 0.5; cam.far = 1500; add_child(cam); cam.position = Vector3(float(args.get("cx", 0)), 9, float(args.get("cz", 10 + list.size() * 7.2))); cam.look_at(Vector3(float(args.get("cx", 0)), 4.6, 0))
+			var m := Builder.build_mech(list[i]); m.mat.set_shader_parameter("debug_mode", int(args.get("dbg", 0))); m.root.position.x = (i - (list.size() - 1) / 2.0) * float(args.get("sp", 11)); m.root.rotation.y = ang; add_child(m.root)
+			for key in ["backR", "backL"]:
+				var wn = m.wn.get(key)
+				if wn != null and wn.pv != null and not wn.fixed: wn.pv.rotation.x = 0.0 if args.get("pose", "stow") == "act" else -(wn.stow if wn.stow else 0.22)
+		var cam := Camera3D.new(); cam.fov = 30; cam.near = 0.5; cam.far = 1500; add_child(cam); cam.position = Vector3(float(args.get("cx", 0)), float(args.get("cy", 9)), float(args.get("cz", 10 + list.size() * 7.2))); cam.look_at(Vector3(float(args.get("cx", 0)), float(args.get("ty", 4.6)), 0))
 	else:
 		var cat: String = args.get("cat", "hand")
 		for p in D.PARTS:

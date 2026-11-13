@@ -165,13 +165,14 @@ static func build_mech(build: Dictionary, mat: ShaderMaterial = null) -> Diction
 	var waist := Node3D.new(); waist.position.y = legs.hipY; body.add_child(waist); model.waist = waist
 	var core = _core(p.core); waist.add_child(core.g); model.core = core
 	var head = _head(p.head); att(core, core.m.head, head); model.head = head.g
-	att(core, core.m.gen, gen_model(p.gen))
-	att(core, core.m.fcs, fcs_model(p.fcs))
+	var fit := { "head": head, "backs": [], "backtop": [], "hipback": [], "mast": [], "arms": {} }
+	fit.gen = att(core, core.m.gen, gen_model(p.gen))
+	fit.fcs = att(core, core.m.fcs, fcs_model(p.fcs))
 	var fcol: String = FLAME_COL[int(p.booster.m.v) if p.booster else 0]
 	model.flameCol = Color(fcol)
 	model.flame_mat = Mats.flame_material(Color(fcol))
 	if p.booster:
-		var b = booster_model(p.booster); att(core, core.m.booster, b)
+		var b = booster_model(p.booster); att(core, core.m.booster, b); fit.booster = b
 		for o in b.noz: add_flame(model, o, 0.4)
 	for o in legs.noz: add_flame(model, o, 0.55)
 	model.legThr = legs.thr
@@ -179,7 +180,7 @@ static func build_mech(build: Dictionary, mat: ShaderMaterial = null) -> Diction
 	for e in [["R", -1.0], ["L", 1.0]]:
 		var key: String = e[0]; var s: float = e[1]
 		var arm = build_arm(p.arms, s); att(core, core.m["arm" + key], arm)
-		model.arm[key] = { "sh": arm.g, "el": arm.el.g, "node": arm }
+		model.arm[key] = { "sh": arm.g, "el": arm.el.g, "node": arm }; fit.arms[s] = arm
 		var wdef = p["hand" + key]
 		if p.arms.kind == "hand" and wdef:
 			var w = _hand(wdef); att(arm.el, arm.el.m.hand, w)
@@ -196,7 +197,7 @@ static func build_mech(build: Dictionary, mat: ShaderMaterial = null) -> Diction
 		var key: String = e[0]; var s: float = e[1]
 		var bdef = p["back" + key]
 		if bdef == null: continue
-		var b = _back(bdef, s); att(core, core.m["back" + key], b)
+		var b = _back(bdef, s); att(core, core.m["back" + key], b); fit.backs.append([b, s, core.m["back" + key]])
 		var mz = core.m["back" + key]
 		if b.pv:
 			for k in b.kids:
@@ -214,6 +215,7 @@ static func build_mech(build: Dictionary, mat: ShaderMaterial = null) -> Diction
 		for e in res.get("core", []):
 			att(core, core.m[e[0]], e[1])
 			if e.size() > 2: e[1].g.position = Vector3(e[2][0], e[2][1], e[2][2])
+			if fit.has(e[0]): fit[e[0]].append(e[1])
 		for e in res.get("legs", []):
 			var found = legs.g.find_children(e[0], "Node3D", true, false)
 			for o in found:
@@ -225,6 +227,7 @@ static func build_mech(build: Dictionary, mat: ShaderMaterial = null) -> Diction
 			for kk in [["R", -1.0], ["L", 1.0]]:
 				var el = model.arm[kk[0]].node.el
 				if el.m.has(e[0]): att(el, el.m[e[0]], e[1].call(kk[1]))
+	_fit(core, fit)
 	legs.bake(mat); core.bake(mat)
 	pose_legs(model)
 	var H: float = legs.hipY; var cd: Dictionary = core.dim; var wide: bool = legs.type == "tank" or legs.type == "quad"
@@ -240,6 +243,194 @@ static func build_mech(build: Dictionary, mat: ShaderMaterial = null) -> Diction
 	]
 	model.aimY = H + cd.H * 0.6
 	return model
+
+## AABB da geometria de um nó de construção (e filhos) no espaço de `ref`. Vazio → size.x < 0.
+static func n_aabb(n, ref: Node3D, skip: Array = []) -> AABB:
+	var xf := Transform3D.IDENTITY
+	var p: Node = n.g
+	while p != null and p != ref: xf = (p as Node3D).transform * xf; p = p.get_parent()
+	var box := AABB(Vector3.ZERO, Vector3(-1, -1, -1))
+	if n.v.size() > 0:
+		# caixa local guardada no nó (a geometria não muda; só as poses)
+		var lb = n.extra.get("aabb")
+		if lb == null or n.extra.get("aabb_n", -1) != n.v.size():
+			var lo := Vector3(INF, INF, INF); var hi := Vector3(-INF, -INF, -INF)
+			for q in n.v: lo = lo.min(q); hi = hi.max(q)
+			lb = AABB(lo, hi - lo); n.extra["aabb"] = lb; n.extra["aabb_n"] = n.v.size()
+		box = xf * lb
+	for k in n.kids:
+		if k in skip: continue
+		var kb := n_aabb(k, ref, skip)
+		if kb.size.x < 0: continue
+		box = kb if box.size.x < 0 else box.merge(kb)
+	return box
+
+## Pontos amostrados sobre as faces (passo ~0,18 m), no espaço de `ref`.
+static func _samples(n, ref: Node3D, skip: Array, step := 0.22) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	var xf := Transform3D.IDENTITY
+	var p: Node = n.g
+	while p != null and p != ref: xf = (p as Node3D).transform * xf; p = p.get_parent()
+	var loc = n.extra.get("smp")
+	if loc == null or n.extra.get("smp_n", -1) != n.v.size():
+		loc = PackedVector3Array()
+		var v: PackedVector3Array = n.v
+		for i in range(0, v.size() - 2, 3):
+			var a := v[i]; var b := v[i + 1]; var c := v[i + 2]
+			var e := maxf(a.distance_to(b), maxf(b.distance_to(c), c.distance_to(a)))
+			if e < step * 0.6: loc.append((a + b + c) / 3.0); continue
+			var k := clampi(ceili(e / step), 1, 14)
+			for u in k + 1:
+				for w in k + 1 - u: loc.append(a + (b - a) * (float(u) / k) + (c - a) * (float(w) / k))
+		n.extra["smp"] = loc; n.extra["smp_n"] = n.v.size()
+	if xf == Transform3D.IDENTITY: out.append_array(loc)
+	else:
+		var base := out.size(); out.resize(base + loc.size())
+		for i in loc.size(): out[base + i] = xf * loc[i]
+	for kk in n.kids:
+		if kk in skip: continue
+		out.append_array(_samples(kk, ref, skip, step))
+	return out
+
+## Mapa de alturas: célula (x,z) de 0,2 m → [y mínimo, y máximo].
+static func _hfield(pts: PackedVector3Array, off: Vector3) -> Dictionary:
+	var h := {}
+	for q in pts:
+		var t := q + off
+		var key := Vector2i(floori(t.x * 5.0), floori(t.z * 5.0))
+		var cur = h.get(key)
+		if cur == null: h[key] = Vector2(t.y, t.y)
+		else: h[key] = Vector2(minf(cur.x, t.y), maxf(cur.y, t.y))
+	return h
+
+## Quanto subir a peça (mapa u) para passar por cima do obstáculo (mapa a), célula a célula.
+static func _clear_dy(u: Dictionary, a: Dictionary, dzc := 0) -> float:
+	var need := 0.0
+	var off := Vector2i(0, dzc)
+	for key in u:
+		var ac = a.get(key + off)
+		if ac == null: continue
+		var uc: Vector2 = u[key]
+		if uc.y < ac.x - 0.05: continue          # a peça passa por baixo
+		need = maxf(need, ac.y + 0.08 - uc.x)
+	return need
+
+## Expande o mapa de alturas uma célula para os lados (folga).
+static func _dilate(a: Dictionary) -> Dictionary:
+	var out := {}
+	for key in a:
+		var c: Vector2 = a[key]
+		for ox in [-1, 0, 1]:
+			for oz in [-1, 0, 1]:
+				var k2: Vector2i = key + Vector2i(ox, oz)
+				var cur = out.get(k2)
+				out[k2] = c if cur == null else Vector2(minf(cur.x, c.x), maxf(cur.y, c.y))
+	return out
+
+static func _ov(a: AABB, b: AABB, m := 0.0) -> bool:
+	return a.size.x >= 0 and b.size.x >= 0 and a.grow(m).intersects(b)
+
+## Encaixe automático: afasta o que se atravessaria (dorsais × cabeça/ombros, módulos × cabeça,
+## propulsor × gerador) e cria suportes para as peças deslocadas.
+static func _fit(core, fit: Dictionary) -> void:
+	var ref: Node3D = core.g
+	var hb := n_aabb(fit.head, ref)
+	# módulos do topo traseiro vão para trás da cabeça
+	for mn in fit.backtop:
+		var mb := n_aabb(mn, ref)
+		if _ov(mb, hb, 0.06): mn.g.position.z -= mb.end.z - (hb.position.z - 0.08)
+	var center: Array = [hb]
+	for mn in fit.backtop: center.append(n_aabb(mn, ref))
+	var placed: Array = []
+	for e in fit.backs:
+		var b = e[0]; var s: float = e[1]; var mount: Node3D = e[2]
+		var poses: Array = [0.0]
+		if b.pv != null and not b.fixed: poses = [0.0, -(b.stow if b.stow else 0.22), -0.5, -0.9, 0.3]
+		var r0: float = b.pv.rotation.x if b.pv != null else 0.0
+		var u := AABB(Vector3.ZERO, Vector3(-1, -1, -1))
+		for r in poses:
+			if b.pv != null and not b.fixed: b.pv.rotation.x = r
+			var bb := n_aabb(b, ref)
+			u = bb if u.size.x < 0 else u.merge(bb)
+		if b.pv != null: b.pv.rotation.x = r0
+		if u.size.x < 0: continue
+		# folga lateral em relação ao que fica no eixo (cabeça, módulos do topo)
+		var need := 0.0
+		for ob in center:
+			if ob.size.x < 0: continue
+			if u.position.y < ob.end.y + 0.05 and u.end.y > ob.position.y - 0.05 and u.position.z < ob.end.z + 0.05 and u.end.z > ob.position.z - 0.05:
+				need = maxf(need, maxf(absf(ob.position.x), absf(ob.end.x)) + 0.12)
+		var inner := u.position.x if s > 0 else -u.end.x
+		var dx := maxf(0.0, need - inner)
+		var mu := AABB(u.position + Vector3(s * dx, 0, 0), u.size)
+		# não pode entrar no ombro / ombreira do mesmo lado: recua e/ou sobe o mínimo (mapa de alturas por célula)
+		var dy := 0.0; var dz := 0.0
+		var arm = fit.arms.get(s)
+		if arm != null:
+			var ab := n_aabb(arm, ref, [arm.el])
+			if _ov(mu, ab, 0.08):
+				var ahf := _dilate(_hfield(_samples(arm, ref, [arm.el]), Vector3.ZERO))
+				var pts := PackedVector3Array()
+				for r in poses:
+					if b.pv != null and not b.fixed: b.pv.rotation.x = r
+					pts.append_array(_samples(b, ref, []))
+				if b.pv != null: b.pv.rotation.x = r0
+				var uhf := _hfield(pts, Vector3(s * dx, 0, 0))
+				var best := INF
+				for k in 7:
+					var up := _clear_dy(uhf, ahf, -k)
+					var cost := up + k * 0.2 * 1.4
+					if cost < best: best = cost; dy = up; dz = -0.2 * k
+		mu = AABB(mu.position + Vector3(0, 0, dz), mu.size)
+		if dx < 0.02 and dy < 0.02 and dz > -0.02: placed.append(mu); continue
+		var br = Geo.N.new("fit")
+		var bx: float = s * dx
+		if dx >= 0.02:
+			br.put("k", Geo.bx(dx + 0.55, 0.32, 0.7, 0.05), Vector3(bx / 2.0, 0.16, 0.12))
+			br.put("c", Geo.bx(dx + 0.35, 0.08, 0.5, 0.02), Vector3(bx / 2.0, 0.35, 0.12))
+			Geo.bolts(br, "d", [Vector3(bx * 0.15, 0.4, 0.3), Vector3(bx * 0.85, 0.4, 0.3)], 0.05, "y")
+		if dz <= -0.02:
+			br.put("k", Geo.bx(0.5, 0.3, -dz + 0.6, 0.05), Vector3(bx, 0.16, dz / 2.0 + 0.1))
+			br.put("d", Geo.bx(0.56, 0.06, -dz + 0.4, 0.01), Vector3(bx, 0.33, dz / 2.0 + 0.1))
+		if dy >= 0.02:
+			br.put("c", Geo.bx(0.42, dy + 0.3, 0.6, 0.05), Vector3(bx, dy / 2.0 + 0.15, dz + 0.12))
+			br.put("k", Geo.bx(0.5, 0.12, 0.68, 0.02), Vector3(bx, dy + 0.28, dz + 0.12))
+			if dx >= 0.3: Geo.rod(br, "d", Vector3(0, 0.25, 0.12), Vector3(bx * 0.92, dy * 0.85 + 0.2, dz + 0.12), 0.06)
+			if dy >= 0.3: Geo.piston(br, Vector3(bx - s * 0.18, 0.2, dz - 0.22), Vector3(bx - s * 0.18, dy + 0.2, dz - 0.22), 0.05)
+		mount.add_child(br.g); core.kids.append(br)
+		mount.remove_child(b.g); br.g.add_child(b.g); b.g.position = Vector3(bx, dy, dz)
+		placed.append(AABB(mu.position + Vector3(0, dy, 0), mu.size))
+	# antena (mastro) muda de lugar se uma dorsal ocupa o espaço dela
+	for mn in fit.mast:
+		var mb := n_aabb(mn, ref)
+		for pu in placed:
+			if _ov(mb, pu, 0.05):
+				mn.g.position = Vector3(-mn.g.position.x * 0.2, mn.g.position.y, core.dim.D * 0.32)
+				mb = n_aabb(mn, ref)
+				if _ov(mb, hb, 0.05): mn.g.position.x = hb.end.x + 0.25
+				break
+	# mira (FCS) sai da frente das dorsais deslocadas
+	if fit.get("fcs") != null:
+		var fb := n_aabb(fit.fcs, ref)
+		for pu in placed:
+			if _ov(fb, pu, 0.05): fit.fcs.g.position.z += pu.end.z + 0.08 - fb.position.z; fb = n_aabb(fit.fcs, ref)
+	# propulsor e módulos baixos não entram no gerador: recuam com um duto
+	var gb := n_aabb(fit.gen, ref)
+	if fit.get("booster") != null:
+		var bo = fit.booster; var ob := n_aabb(bo, ref)
+		if _ov(ob, gb, 0.04):
+			var dz := ob.end.z - (gb.position.z - 0.06)
+			bo.g.position.z -= dz
+			var duct = Geo.N.new("fit"); duct.put("k", Geo.bx(1.2, 0.55, dz + 0.3, 0.05), Vector3(0, 0, dz / 2.0 - dz))
+			duct.put("d", Geo.bx(1.3, 0.1, 0.12, 0.02), Vector3(0, 0.3, -dz / 2.0))
+			bo.g.get_parent().add_child(duct.g); core.kids.append(duct)
+	for mn in fit.hipback:
+		var mb := n_aabb(mn, ref)
+		if _ov(mb, gb, 0.04): mn.g.position.y -= mb.end.y - (gb.position.y - 0.05)
+		mb = n_aabb(mn, ref)
+		if fit.get("booster") != null:
+			var ob2 := n_aabb(fit.booster, ref)
+			if _ov(mb, ob2, 0.04): mn.g.position.y -= mb.end.y - (ob2.position.y - 0.05)
 
 ## Modelo isolado de uma peça (vitrine da loja)
 static func build_part_preview(id: String, paint: Dictionary) -> Node3D:
