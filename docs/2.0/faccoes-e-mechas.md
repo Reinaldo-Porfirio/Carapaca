@@ -32,6 +32,7 @@ O campeão do Circuito é, de repente, o piloto mais cobiçado do continente.
 - **Doutrina:** avançar devagar, sem recuar, atrás de muito aço.
 - **Humor:** tudo em três vias. Cobram multa por "danos ao patrimônio do Consórcio" de quem os ataca.
 - **Mechas:** Heavy Assault (assalto pesado, variantes HA-M e HA-I), Bastião (escudo-muralha) e Fortaleza (chefe).
+- **Veículos:** Haubitze 8×8 (artilharia autopropulsada) e Panzer «Amboss» (tanque pesado).
 - **Cores:** cinza aço, ocre e faixas de advertência.
 
 ### Tsubame Kōki: a Revoada
