@@ -72,7 +72,7 @@ Cada tipo **obriga o jogador a lutar diferente**. Não basta ter mais vida ou ma
 | Tipo | Facção | Porte | Regra única | Como vencer |
 |---|---|---|---|---|
 | **Bastião** | Haldane-Bräck | 10 m, muito pesado | **escudo-muralha frontal**: quase imune pela frente; avança sem recuar e empurra | flanquear e acertar costas, pernas e o canhão (fica exposto ao disparar) |
-| **Fortaleza** | Haldane-Bräck | 30 m, chefe | **mapa ambulante**: torres independentes, ponte de comando, reator traseiro | desmontar por partes; cada torre destruída muda o padrão de ataque |
+| **Fortaleza** | Haldane-Bräck | 70 m, chefe | **cidade blindada de oito pernas**: leva tripulação, desembarca Carcaças e Bastiões pela rampa da proa, torres triplas, silos de mísseis, canhões de bordada, antiaéreas e morteiros | desmontar por partes; cada torre destruída muda o padrão de ataque |
 | **Gavião** | Tsubame Kōki | asa de 10 m | **voo pairado**: domina o ar, metralha em mergulho e volta para cima | míssil guiado e munição de impacto; derrubado, fica lento e frágil no chão |
 | **Duelista** | Tsubame Kōki | 10 m, esguio | **apara e contra-ataca** golpes e projéteis lentos que vêm de frente | fintas, disparos carregados, explosivos, nunca ficar parado na frente dele |
 | **Pastor** | Meridiano | 8 m, tripé | **comanda o Enxame**: drones ficam muito mais precisos perto dele | achar e derrubar o Pastor; o Enxame fica burro e se dispersa |

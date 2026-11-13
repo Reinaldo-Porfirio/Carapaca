@@ -155,7 +155,8 @@ func _concept_view(args: Dictionary) -> void:
 	var cen := all.get_center(); var size := maxf(all.size.x, maxf(all.size.y * 1.25, all.size.z))
 	var cam := Camera3D.new(); cam.fov = 30; cam.near = 0.3; cam.far = 2000; add_child(cam)
 	var dir := Vector3(float(args.get("dx", 0.75)), float(args.get("dy", 0.42)), 1.0).normalized()
-	cam.position = cen + dir * size * 1.9; cam.look_at(cen + Vector3(0, -all.size.y * 0.05, 0))
+	cam.position = cen + dir * size * 1.9 * float(args.get("zoom", 1.0)); cam.look_at(cen + Vector3(0, -all.size.y * 0.05, 0))
+	sun.directional_shadow_max_distance = maxf(120.0, size * 4.0)
 	Settings.apply_viewport(get_viewport())
 
 func _tree_aabb(root: Node3D) -> AABB:
