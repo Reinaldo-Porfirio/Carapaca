@@ -30,6 +30,7 @@ static func build(id: String) -> Node3D:
 	if id == "suc_roubada": return _roubada(mat)
 	if id == "hb_fortaleza": return _fortaleza_scene(mat)
 	if id == "hb_assalto": return _assalto_scene()
+	if id == "tsk_fenix": return _fenix_scene()
 	var n: Geo.N = Concepts.new().call(id)
 	var root := n.bake(mat)
 	root.scale = Vector3.ONE * float(SCALE.get(id, 1.0))
@@ -486,6 +487,93 @@ static func tsk_fenix() -> Geo.N:
 	n.put("g", Geo.sph(0.16, 8, 6), Vector3(0, 9.4, 0.45))
 	return n
 
+## Fênix «Sky Lord»: comandante da Revoada. Armadura samurai de alta patente e asas de fênix.
+static func tsk_skylord() -> Geo.N:
+	var n := Geo.N.new("c")
+	# pernas com protetores de coxa (haidate) e canela (suneate)
+	for s in [1.0, -1.0]:
+		var hip := Vector3(s * 0.72, 5.5, 0); var knee := Vector3(s * 0.82, 3.0, 0.35); var ank := Vector3(s * 0.82, 0.5, 0.05)
+		leg(n, hip, knee, ank, 0.7, 0.6, "c", "c")
+		for k in 4: n.put("a" if k % 2 == 0 else "b", Geo.bx(0.92, 0.3, 0.14, 0.03), hip.lerp(knee, 0.2 + k * 0.18) + Vector3(0, 0, 0.45), Vector3(-0.08, 0, 0))
+		n.put("b", Geo.bx(0.85, 0.8, 0.5, 0.06), knee + Vector3(0, 0.05, 0.32), Vector3(-0.3, 0, 0))
+		n.put("a", Geo.bx(0.8, 2.0, 0.22, 0.05), knee.lerp(ank, 0.5) + Vector3(0, 0, 0.38), Vector3(0.05, 0, 0))
+		for e in [-0.38, 0.38]: n.put("b", Geo.bx(0.06, 2.0, 0.24, 0.01), knee.lerp(ank, 0.5) + Vector3(e, 0, 0.39), Vector3(0.05, 0, 0))
+		n.put("c", Geo.prism([[-0.6, 0.0], [1.2, 0.0], [0.95, 0.38], [-0.5, 0.45]], 0.66, 0.05), Vector3(s * 0.82, 0, 0.05))
+		n.put("b", Geo.bx(0.68, 0.1, 0.3, 0.02), Vector3(s * 0.82, 0.38, 0.95))
+	# saiote em três camadas (kusazuri), vermelho com bordas douradas
+	for tier in 3:
+		var y := 5.3 - tier * 0.5; var spread := 0.62 + tier * 0.06
+		for side in [[0.0, 1.0], [0.0, -1.0], [1.0, 0.0], [-1.0, 0.0]]:
+			var dx: float = side[0]; var dz: float = side[1]
+			var pos := Vector3(dx * (0.95 + tier * 0.08), y, dz * (spread + 0.1))
+			var rot := Vector3(dz * (0.18 + tier * 0.06), 0, -dx * (0.18 + tier * 0.06))
+			var w := 0.12 if dx != 0.0 else 1.6
+			var d := 1.3 if dx != 0.0 else 0.12
+			n.put("a", Geo.bx(w, 0.55, d, 0.03), pos, rot); n.put("b", Geo.bx(w + 0.02, 0.07, d + 0.02, 0.01), pos + Vector3(0, -0.26, 0), rot)
+	n.put("d", Geo.cyl(0.55, 0.6, 0.5, 12), Vector3(0, 5.75, 0))
+	# couraça (dō) em lâminas horizontais com emblema da fênix
+	n.put("c", Geo.prism([[-0.65, 5.95], [0.62, 5.95], [0.95, 7.3], [0.55, 8.25], [-0.75, 8.15], [-0.85, 6.9]], 2.0, 0.1))
+	for k in 5:
+		var y := 6.15 + k * 0.38
+		n.put("a", Geo.bx(2.06, 0.3, 0.12, 0.02), Vector3(0, y, 0.68 + minf(k, 3) * 0.08), Vector3(-0.12, 0, 0))
+		n.put("b", Geo.bx(2.08, 0.05, 0.14, 0.01), Vector3(0, y - 0.15, 0.69 + minf(k, 3) * 0.08), Vector3(-0.12, 0, 0))
+	n.put("b", Geo.prism([[0.0, 0.42], [0.22, 0.05], [0.12, -0.35], [0.0, -0.18], [-0.12, -0.35], [-0.22, 0.05]], 0.06, 0.01, "z"), Vector3(0, 7.25, 1.06))
+	n.put("g", Geo.sph(0.09, 6, 4), Vector3(0, 7.3, 1.1))
+	# ombreiras (sode): placas largas em cinco lâminas
+	for s in [1.0, -1.0]:
+		var sh := Vector3(s * 1.35, 7.95, 0); joint(n, sh, 0.4)
+		for k in 5:
+			var pc := sh + Vector3(s * (0.5 + k * 0.05), 0.15 - k * 0.3, 0)
+			n.put("a" if k < 4 else "c", Geo.bx(1.15, 0.26, 1.55, 0.03), pc, Vector3(0, 0, s * -0.42))
+			n.put("b", Geo.bx(1.17, 0.05, 1.57, 0.01), pc + Vector3(0, -0.12, 0), Vector3(0, 0, s * -0.42))
+		n.put("b", Geo.bx(0.3, 0.3, 0.3, 0.05), sh + Vector3(s * 0.45, 0.35, 0.0))
+		var el := Vector3(s * 1.55, 6.35, 0.3); var wr := Vector3(s * 1.5, 5.5, 1.1)
+		beam(n, "c", sh, el, 0.44, 0.46); joint(n, el, 0.28); beam(n, "a", el, wr, 0.52, 0.56)
+		for k in 3: n.put("b", Geo.bx(0.58, 0.05, 0.62, 0.01), el.lerp(wr, 0.25 + k * 0.25), Vector3(-0.75, 0, 0))
+		n.put("c", Geo.bx(0.38, 0.42, 0.42, 0.04), wr + Vector3(0, -0.12, 0.18))
+	# katana na mão direita, espada curta na cintura
+	var hand := Vector3(-1.5, 5.35, 1.4)
+	n.put("k", Geo.bx(0.12, 0.12, 0.95, 0.02), hand + Vector3(0, 0.15, -0.3), Vector3(0.35, 0, 0))
+	n.put("b", Geo.cyl_z(0.28, 0.28, 0.07, 12), hand + Vector3(0, 0, 0.22), Vector3(0.35, 0, 0))
+	n.put("d", Geo.bx(0.07, 0.25, 5.6, 0.01), hand + Vector3(0, -0.95, 2.85), Vector3(0.35, 0, 0)); n.put("g", Geo.bx(0.03, 0.04, 5.4, 0.005), hand + Vector3(0, -1.06, 2.78), Vector3(0.35, 0, 0))
+	n.put("c", Geo.bx(0.18, 0.24, 2.6, 0.03), Vector3(0.95, 5.2, 0.5), Vector3(0.45, 0.15, 0)); n.put("b", Geo.bx(0.2, 0.26, 0.12, 0.01), Vector3(0.95, 5.55, -0.25), Vector3(0.45, 0.15, 0))
+	# kabuto: cúpula, abas viradas, proteção de nuca em camadas, máscara e crista dourada
+	n.put("d", Geo.cyl(0.24, 0.28, 0.3, 10), Vector3(0, 8.3, 0))
+	n.put("c", Geo.sph(0.52, 14, 8, 0, TAU, 0, PI * 0.55), Vector3(0, 8.85, 0.05)); n.put("b", Geo.tor(0.5, 0.05, 5, 20), Vector3(0, 8.85, 0.05), Vector3(PI / 2, 0, 0))
+	for k in 3: n.put("a", Geo.sph(0.62 + k * 0.12, 14, 3, PI * 0.15, PI * 1.7, PI * 0.5, PI * 0.18), Vector3(0, 8.85 - k * 0.2, 0.05), Vector3(0, PI, 0))
+	for s in [1.0, -1.0]: n.put("a", Geo.bx(0.08, 0.42, 0.5, 0.02), Vector3(s * 0.62, 8.75, 0.3), Vector3(0, s * 0.6, s * -0.25)); n.put("b", Geo.bx(0.09, 0.44, 0.06, 0.01), Vector3(s * 0.66, 8.75, 0.52), Vector3(0, s * 0.6, s * -0.25))
+	n.put("k", Geo.prism([[-0.3, 8.35], [0.3, 8.35], [0.24, 8.72], [0.0, 8.8], [-0.24, 8.72]], 0.12, 0.02, "z"), Vector3(0, 0, 0.5))
+	for x in [-0.12, 0.12]: n.put("g", Geo.bx(0.12, 0.04, 0.05, 0.005), Vector3(x, 8.66, 0.58), Vector3(0, 0, -x * 1.5))
+	n.put("b", Geo.tor(0.62, 0.07, 5, 20, PI), Vector3(0, 9.2, 0.42), Vector3(0, 0, 0))
+	n.put("b", Geo.prism([[0.0, 0.0], [0.16, 0.35], [0.06, 0.8], [0.0, 0.62], [-0.06, 0.8], [-0.16, 0.35]], 0.06, 0.01, "z"), Vector3(0, 9.2, 0.46))
+	n.put("g", Geo.sph(0.07, 6, 4), Vector3(0, 9.42, 0.5))
+	# propulsor dorsal e asas de fênix (penas em chama que sobem e se curvam)
+	n.put("c", Geo.bx(1.2, 1.4, 0.8, 0.1), Vector3(0, 7.5, -0.95)); n.put("b", Geo.bx(1.22, 0.12, 0.82, 0.01), Vector3(0, 8.15, -0.95))
+	for s in [1.0, -1.0]:
+		n.put("d", Geo.cyl_z(0.24, 0.32, 0.6, 12), Vector3(s * 0.36, 6.9, -1.45)); n.put("g", Geo.cyl_z(0.2, 0.2, 0.05, 12), Vector3(s * 0.36, 6.9, -1.78))
+		var root := Vector3(s * 0.6, 8.2, -1.05); var elbow := Vector3(s * 2.9, 10.3, -1.8); var tip := Vector3(s * 5.6, 12.6, -2.5)
+		joint(n, root, 0.3, "b"); beam(n, "b", root, elbow, 0.3, 0.28); joint(n, elbow, 0.24, "b"); beam(n, "b", elbow, tip, 0.24, 0.22)
+		for i in 16:
+			var t := i / 15.0
+			var p := root.lerp(elbow, t * 2.0) if t < 0.5 else elbow.lerp(tip, (t - 0.5) * 2.0)
+			var L := 1.8 + t * 1.6
+			var d1 := Vector3(s * (0.35 + t * 0.7), -0.85 + t * 0.35, -0.5).normalized()
+			var d2 := Vector3(s * (0.5 + t * 0.4), 0.55 + t * 0.4, -0.3).normalized()
+			var m := p + d1 * L
+			beam(n, "b" if t < 0.35 else "a", p, m, 0.58 - t * 0.12, 0.05, 0.01, Vector3.BACK)
+			beam(n, "a", m, m + d2 * L * 0.3, 0.42 - t * 0.08, 0.05, 0.01, Vector3.BACK)
+			beam(n, "g" if t > 0.3 else "b", m + d2 * L * 0.3, m + d2 * L * 0.6, 0.3 - t * 0.06, 0.05, 0.01, Vector3.BACK)
+		for i in 6:
+			var t := i / 5.0
+			var p := root.lerp(elbow, t * 2.0) if t < 0.5 else elbow.lerp(tip, (t - 0.5) * 2.0)
+			beam(n, "b", p + Vector3(0, 0.08, 0.1), p + Vector3(s * 0.3, -0.8, -0.2), 0.6, 0.06, 0.01, Vector3.BACK)
+	# penas de cauda longas
+	for k in 5:
+		var a := (k - 2) * 0.28
+		var p0 := Vector3(sin(a) * 0.4, 6.6, -1.2); var p1 := p0 + Vector3(sin(a) * 0.9, -1.6, -1.4); var p2 := p1 + Vector3(sin(a) * 1.1, -1.6, -0.7); var p3 := p2 + Vector3(sin(a) * 0.8, -0.9, 0.5)
+		beam(n, "b", p0, p1, 0.36, 0.05, 0.01, Vector3.BACK); beam(n, "a", p1, p2, 0.32, 0.05, 0.01, Vector3.BACK); beam(n, "g", p2, p3, 0.22, 0.05, 0.01, Vector3.BACK)
+	return n
+
 # ═════════ MERIDIANO ═════════
 static func mrs_pastor() -> Geo.N:
 	var n := Geo.N.new("c")
@@ -764,4 +852,12 @@ static func _assalto_scene() -> Node3D:
 	var m := hb_heavy("M").bake(Mats.mech_material(pm)); m.position = Vector3(-4.4, 0, 0); m.rotation.y = 0.2; root.add_child(m)
 	var pi: Dictionary = PAINT.HB.duplicate(); pi.b = "#8c3a26"
 	var i := hb_heavy("I").bake(Mats.mech_material(pi)); i.position = Vector3(4.6, 0, -0.6); i.rotation.y = -0.15; root.add_child(i)
+	return root
+
+## Fênix comum ao lado do Fênix «Sky Lord» (vermelho-laca, dourado e preto).
+static func _fenix_scene() -> Node3D:
+	var root := Node3D.new()
+	var f := tsk_fenix().bake(Mats.mech_material(PAINT.TSK)); f.scale = Vector3.ONE * 1.25; f.position = Vector3(-4.6, 0, 0.4); f.rotation.y = 0.2; root.add_child(f)
+	var lord := tsk_skylord().bake(Mats.mech_material({ "a": "#8a1c16", "b": "#c9a227", "c": "#151517", "glow": "#ff7a2a", "wear": 0.12 }))
+	lord.scale = Vector3.ONE * 1.3; lord.position = Vector3(5.0, 0, -0.4); lord.rotation.y = -0.15; root.add_child(lord)
 	return root

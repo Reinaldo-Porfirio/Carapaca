@@ -39,7 +39,7 @@ O campeão do Circuito é, de repente, o piloto mais cobiçado do continente.
 - **Quem são:** clãs de pilotos de elite sob um código de honra. Dominam o céu e o duelo.
 - **Doutrina:** golpes rápidos, um contra um, nunca dois contra um, a não ser que esteja perdendo.
 - **Humor:** recitam haicais (ruins) antes do primeiro tiro e anotam derrotas num caderno de "lições".
-- **Mechas:** Gavião (voador) e Duelista (corpo a corpo).
+- **Mechas:** Gavião (voador), Duelista (corpo a corpo), Garça (bípede alado, atiradora aérea) e Fênix (ás); o comandante usa o Fênix «Sky Lord», com armadura samurai de alta patente e asas de fênix.
 - **Cores:** branco, vermelho-laca e preto.
 
 ### Meridiano: a Rede
