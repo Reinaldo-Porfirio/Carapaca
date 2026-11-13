@@ -4,6 +4,8 @@ var out := ""
 var frames := 0
 func setup(args: Dictionary) -> void:
 	out = args.get("out", "/tmp/view.png")
+	if args.get("mode", "") == "concept":
+		_concept_view(args); return
 	if args.get("mode", "") == "timing":
 		var t0 := Time.get_ticks_usec(); var cnt := 0
 		for r in D.RIVALS:
@@ -131,3 +133,38 @@ func _process(_d: float) -> void:
 		get_viewport().get_texture().get_image().save_png(out)
 		printerr("saved ", out)
 		get_tree().quit()
+
+## Concept 2.0 com uma Carcaça de referência ao lado; câmera enquadra pelo tamanho.
+func _concept_view(args: Dictionary) -> void:
+	var env := WorldEnvironment.new(); var e := Environment.new()
+	var sky := Sky.new(); var ps := ProceduralSkyMaterial.new(); ps.sky_top_color = Color("#2c323c"); ps.sky_horizon_color = Color("#7c8088"); ps.ground_bottom_color = Color("#242322"); ps.ground_horizon_color = Color("#5c5c5c"); sky.sky_material = ps
+	e.background_mode = Environment.BG_SKY; e.sky = sky; e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; e.ambient_light_energy = 0.7; e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+	e.tonemap_mode = Environment.TONE_MAPPER_AGX; e.tonemap_exposure = 1.1; e.glow_enabled = true; e.glow_intensity = 0.4; e.ssao_enabled = true; e.ssao_intensity = 1.6
+	e.fog_enabled = true; e.fog_light_color = Color("#6c7078"); e.fog_density = 0.004
+	env.environment = e; add_child(env)
+	var sun := DirectionalLight3D.new(); sun.light_color = Color("#fff1dc"); sun.light_energy = 2.0; sun.shadow_enabled = true; sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL; sun.directional_shadow_max_distance = 120; sun.shadow_bias = 0.05; sun.shadow_normal_bias = 1.2
+	add_child(sun); sun.look_at_from_position(Vector3(-40, 60, 50), Vector3.ZERO)
+	var rim := DirectionalLight3D.new(); rim.light_color = Color("#9fb4d8"); rim.light_energy = 0.6; add_child(rim); rim.look_at_from_position(Vector3(30, 20, -40), Vector3.ZERO)
+	var fl := MeshInstance3D.new(); var pm := PlaneMesh.new(); pm.size = Vector2(600, 600); fl.mesh = pm
+	var fm := ShaderMaterial.new(); fm.shader = Arena.ground_shader; fm.set_shader_parameter("noise_tex", Mats.noise); fm.set_shader_parameter("kind", 1); fl.material_override = fm; add_child(fl)
+	var c: Node3D = Concepts.build(args.get("c", "hb_bastiao")); add_child(c)
+	var bb := _tree_aabb(c)
+	var ref: Dictionary = Builder.build_mech(D.STARTER_BUILD); add_child(ref.root)
+	ref.root.position = Vector3(bb.position.x - 4.6, 0, bb.get_center().z + 1.0); ref.root.rotation.y = 0.5
+	var all := bb.merge(_tree_aabb(ref.root))
+	var cen := all.get_center(); var size := maxf(all.size.x, maxf(all.size.y * 1.25, all.size.z))
+	var cam := Camera3D.new(); cam.fov = 30; cam.near = 0.3; cam.far = 2000; add_child(cam)
+	var dir := Vector3(float(args.get("dx", 0.75)), float(args.get("dy", 0.42)), 1.0).normalized()
+	cam.position = cen + dir * size * 1.9; cam.look_at(cen + Vector3(0, -all.size.y * 0.05, 0))
+	Settings.apply_viewport(get_viewport())
+
+func _tree_aabb(root: Node3D) -> AABB:
+	var box := AABB(); var first := true
+	for mi in root.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null: continue
+		var xf := Transform3D.IDENTITY; var p: Node = m
+		while p != null and p != self: xf = (p as Node3D).transform * xf; p = p.get_parent()
+		var b := xf * m.get_aabb()
+		box = b if first else box.merge(b); first = false
+	return box
